@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libvienna_lib.a  CMakeFiles/vienna_lib.dir/Users/jyesselm/projects/eternabot_cpp/src/vienna/energy_par.cc.o CMakeFiles/vienna_lib.dir/Users/jyesselm/projects/eternabot_cpp/src/vienna/vienna.cc.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libvienna_lib.a
