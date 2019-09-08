@@ -47,8 +47,6 @@ def get_cmake_lists_header():
     s += "include_directories(%s)\n" % (base_dir + "/src/plog/")
     s += "include_directories(%s)\n\n" % (base_dir + "/unittests/")
     s += "include_directories(%s)\n\n" % (base_dir + "/apps/")
-    s += "# sqlite libraries\n"
-    s += "find_library(SQLITE3_LIBRARY sqlite3)\n\n"
     return s
 
 def get_pretty_lib_name(name):
@@ -100,7 +98,7 @@ def get_linking_declaration(lib):
     for depend in depends[lib]:
         s += " " + depend + "_lib "
     if lib == "util":
-        s += " ${SQLITE3_LIBRARY})\n\n"
+        s += ")\n\n"
     else:
         s += ")\n\n"
     return s

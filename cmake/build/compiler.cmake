@@ -1,10 +1,10 @@
-if( ${CMAKE_CXX_COMPILER} MATCHES ".*[g][+][+].*" )
-    set(COMPILER gcc)
-else()
+if( ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" )
     set(COMPILER clang)
+else()
+    set(COMPILER gcc)
 endif()
 
-MESSAGE( ">> CMAKE identifies C++ compiler as '${CMAKE_CXX_COMPILER}', interpreting this as '${COMPILER}'" )
+MESSAGE( ">> CMAKE identifies C++ compiler as '${CMAKE_CXX_COMPILER_ID}', interpreting this as '${COMPILER}'" )
 MESSAGE( ">> To change, set CXX and CC environment variables (or pass -DCMAKE_CXX_COMPILER) and do a clean rebuild.")
 MESSAGE( ">>  current settings: CXX='$ENV{CXX}' CC='$ENV{CC}'" )
 

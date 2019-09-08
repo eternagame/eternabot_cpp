@@ -42,6 +42,6 @@ class SequenceDesigner(object):
 def main():
     sd = SequenceDesigner()
     sols = sd.design("NNNNUUCGNNNN", "((((....))))")
-    
+
 if __name__ == "__main__":
     main()
