@@ -18,30 +18,28 @@ class SequenceDesigner(object):
     def __call_cpp_eternabot(self, sequence, structure, steps, solutions):
         cmd = self.__exe_path + " -seq {seq} -ss \"{ss}\" -steps {s} -n {sols}".format(
             seq=sequence, ss=structure, s=steps, sols=solutions)
-        subprocess.call(cmd, shell=True)
+        output = subprocess.check_output(cmd, shell=True)
+        return output
 
-    def __parse_cpp_output(self, file_name):
-        f = open(file_name)
-        lines = f.readlines()
-        f.close()
-
-        lines.pop(0)
+    def __parse_cpp_output(self, output):
+        lines = output.split("\n")
         sols = []
 
+        lines.pop()
         for l in lines:
-            spl = l.split(",")
-            sols.append(SequenceDesignerData(spl[2],float(spl[1])))
+            spl = l.split()
+            sols.append(SequenceDesignerData(spl[1],float(spl[0])))
         return sols
 
-    def design(self, sequence, structure, steps=100, solutions=1):
-        self.__call_cpp_eternabot(sequence, structure, steps, solutions)
-        sols = self.__parse_cpp_output("eternabot.scores")
+    def design(self, structure, sequence, steps=100, solutions=1):
+        output = self.__call_cpp_eternabot(sequence, structure, steps, solutions)
+        sols = self.__parse_cpp_output(output)
         return sols
 
 
 def main():
     sd = SequenceDesigner()
-    sols = sd.design("NNNNUUCGNNNN", "((((....))))")
+    sols = sd.design("((((....))))", "NNNNUUCGNNNN")
 
 if __name__ == "__main__":
     main()
