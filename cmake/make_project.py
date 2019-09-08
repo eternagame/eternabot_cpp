@@ -13,7 +13,7 @@ depends = {
     'all' : ['eternabot']
 }
 
-libs = "base math util vienna secondary_structure eternabot"
+libs = "base math data_structure util vienna secondary_structure eternabot"
 #libs = "base math data_structure util vienna secondary_structure eternabot structure motif motif_tools "
 all_lib_paths = libs.split()
 
