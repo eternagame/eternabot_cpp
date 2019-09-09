@@ -31,7 +31,7 @@ class SequenceDesigner(object):
             sols.append(SequenceDesignerData(spl[1],float(spl[0])))
         return sols
 
-    def design(self, structure, sequence, steps=100, solutions=1):
+    def design(self, structure, sequence, solutions=1, steps=100):
         output = self.__call_cpp_eternabot(sequence, structure, steps, solutions)
         sols = self.__parse_cpp_output(output)
         return sols
