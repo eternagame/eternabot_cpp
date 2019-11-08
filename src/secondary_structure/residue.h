@@ -39,6 +39,10 @@ ResType
 convert_res_name_to_type(
         char);
 
+String
+convert_res_type_to_str(
+        ResType);
+
 
 class Residue {
 public:
@@ -50,19 +54,17 @@ public:
         String const & chain_id,
         util::Uuid const & uuid,
         String const & i_code=""):
-    name_(name),
     dot_bracket_(dot_bracket),
     num_(num),
     chain_id_(chain_id),
     uuid_(uuid),
-    i_code_(i_code) {
-        res_type_ = convert_res_name_to_type(name_[0]);
-    }
+    i_code_(i_code),
+    res_type_(convert_res_name_to_type(name[0]))
+    {}
     
     inline
     Residue(
         Residue const & r):
-    name_(r.name_),
     dot_bracket_(r.dot_bracket_),
     num_(r.num_),
     chain_id_(r.chain_id_),
@@ -78,8 +80,7 @@ public:
         if(spl.size() < 4) {
             throw Exception("cannot build secondary_structure::Residue from str: " + s);
         }
-        
-        name_         = spl[0];
+
         dot_bracket_  = spl[1];
         num_          = std::stoi(spl[2]);
         chain_id_     = spl[3];
@@ -87,7 +88,7 @@ public:
         if(spl.size() == 5) {
             i_code_ = spl[4];
         }
-        res_type_ = convert_res_name_to_type(name_[0]);
+        res_type_ = convert_res_name_to_type(spl[0][0]);
     }
     
     ~Residue() {}
@@ -98,15 +99,15 @@ public:
     String
     to_str() {
         std::stringstream ss;
-        ss << name_ << "," << dot_bracket_ << "," << num_ << "," << chain_id_ << "," << i_code_;
+        ss << name() << "," << dot_bracket_ << "," << num_ << "," << chain_id_ << "," << i_code_;
         return ss.str();
     }
     
 public: //getters
     
     inline
-    String const &
-    name() { return name_; }
+    String
+    name() { return convert_res_type_to_str(res_type_); }
     
     inline
     String const &
@@ -141,15 +142,20 @@ public: //setters
     inline
     void
     name(String const & name) {
-        name_ = name;
-        res_type_ = convert_res_name_to_type(name_[0]);
+        res_type_ = convert_res_name_to_type(name[0]);
+    }
+
+    inline
+    void
+    res_type(ResType type) {
+        res_type_ = type;
     }
     
 
 private:
     int num_;
     ResType res_type_;
-    String name_, dot_bracket_, chain_id_, i_code_;
+    String dot_bracket_, chain_id_, i_code_;
     util::Uuid uuid_;
 
 };

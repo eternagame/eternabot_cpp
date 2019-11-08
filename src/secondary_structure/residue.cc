@@ -24,4 +24,18 @@ convert_res_name_to_type(
     }
 }
 
+String
+convert_res_type_to_str(
+        ResType r) {
+    if(r == ResType::ADE) { return "A"; }
+    else if(r == ResType::CYT)  { return "C"; }
+    else if(r == ResType::GUA)  { return "G"; }
+    else if(r == ResType::URA)  { return "U"; }
+    else if(r == ResType::NONE) { return "N"; }
+    else {
+        throw secondary_structure::Exception("incorrect ResType cannot convert to string");
+    }
+
+}
+
 }

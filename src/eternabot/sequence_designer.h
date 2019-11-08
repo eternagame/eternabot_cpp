@@ -116,16 +116,36 @@ private:
             secondary_structure::PoseOP);
 
     bool
-    _new_sequence_violations();
+    _new_sequence_violations(
+            Ints const &,
+            Ints const &);
+
+
+private: // new and possibly badly made functions
+    void
+    _set_initial_helix_sequence(
+            secondary_structure::MotifOP);
+
+    void
+    _get_random_res_type_pair_gc_cap(
+            secondary_structure::ResTypes &);
+
+    void
+    _get_random_res_type_pair(
+            secondary_structure::ResTypes &);
+
 
 private:
     struct Parameters {
-
+        bool biased_gc_caps;
     };
 
 
 private:
+    std::vector<util::Uuid> designable_uuid_bps_;
+    std::map<int, int> designable_uuid_res_;
     std::vector<Strings> possible_bps_;
+    std::vector<secondary_structure::ResTypes> possible_rt_bps_;
     base::Options options_;
     util::RandomNumberGenerator rng_;
     util::MonteCarlo mc_;
@@ -137,8 +157,13 @@ private:
     Ints current_violations_, next_violations_;
     secondary_structure::SequenceConstraints seq_constraints_;
 
+    // current solutions
+    std::map<secondary_structure::MotifOP, secondary_structure::ResTypes> current_restypes_;
+
     int designs_, steps_;
     float temperature_;
+
+    Parameters parameters_;
     
     
 };

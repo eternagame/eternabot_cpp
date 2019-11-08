@@ -16,7 +16,7 @@
 
 void
 EternabotApp::setup_options() {
-    add_option("seq", String(""), base::OptionType::STRING, true);
+    add_option("seq", String(""), base::OptionType::STRING, false);
     add_option("ss", String(""), base::OptionType::STRING, true);
     add_option("steps", 100, base::OptionType::INT);
     add_option("n", 1, base::OptionType::INT);
@@ -34,6 +34,14 @@ EternabotApp::parse_command_line(
     parameters_.steps     = get_int_option("steps");
     parameters_.n         = get_int_option("n");
     parameters_.out_file  = get_string_option("out_file");
+
+    if(parameters_.seq == String("")) {
+       for(int i = 0; i < parameters_.ss.length(); i++) {
+           parameters_.seq += "N";
+       }
+       std::cout << parameters_.ss << std::endl;
+       std::cout << parameters_.seq << std::endl;
+    }
 }
 
 void

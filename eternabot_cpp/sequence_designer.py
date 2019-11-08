@@ -40,6 +40,8 @@ class SequenceDesigner(object):
 def main():
     sd = SequenceDesigner()
     sols = sd.design("((((....))))", "NNNNUUCGNNNN")
+    for s in sols:
+        print(s.sequence, s.score)
 
 if __name__ == "__main__":
     main()

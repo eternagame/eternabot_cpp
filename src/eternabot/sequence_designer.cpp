@@ -22,7 +22,14 @@ SequenceDesigner::SequenceDesigner():
         results_(SequenceDesignerResultOPs()),
         rng_(util::RandomNumberGenerator()) {
 
+    parameters_.biased_gc_caps = true;
+
     possible_bps_ = std::vector<Strings>({{"A", "U"}, {"U", "A"}, {"G", "C"}, {"C", "G"}});
+    possible_rt_bps_ = std::vector<secondary_structure::ResTypes>{
+            {secondary_structure::ResType::ADE, secondary_structure::ResType::URA},
+            {secondary_structure::ResType::URA, secondary_structure::ResType::ADE},
+            {secondary_structure::ResType::CYT, secondary_structure::ResType::GUA},
+            {secondary_structure::ResType::GUA, secondary_structure::ResType::CYT}};
 
 
     // generate constraints
@@ -39,15 +46,7 @@ SequenceDesigner::SequenceDesigner():
 
 
 void
-SequenceDesigner::setup() {
-    /*if((int)results_.size() != steps_) { results_.resize(steps_); }
-    for(auto & r : results_) {
-        r = std::make_shared<SequenceDesignerResult>();
-    }*/
-
-
-
-}
+SequenceDesigner::setup() {}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +78,63 @@ SequenceDesignerResultOPs const &
 SequenceDesigner::design(
         secondary_structure::PoseOP const & p) {
     results_ = SequenceDesignerResultOPs();
+
+    auto motifs = p->helices();
+
     _find_designable_bps(p);       // find all basepairs with N-N residues
+    for(auto const & r : p->residues()) {
+        if(r->res_type() == secondary_structure::ResType::NONE) {
+            designable_uuid_res_[r->num()] = 1;
+        }
+    }
+
+    _set_initial_helix_sequence(motifs[0]);
+
+    exit(0);
+
+    for(auto const & m : p->motifs()) {
+        if(m->mtype() == util::MotifType::HELIX) { continue; }
+        motifs.push_back(m);
+    }
+    auto levels = std::map<secondary_structure::MotifOP, int>();
+    auto children = std::map<secondary_structure::MotifOP, secondary_structure::MotifOPs>();
+    auto used_motifs = std::map<secondary_structure::MotifOP, int>();
+    auto head_motifs = secondary_structure::MotifOPs();
+
+    for(auto const & m : motifs) {
+        if(m->mtype() == util::MotifType::HAIRPIN) {
+            levels[m] = 0;
+            used_motifs[m] = 1;
+            head_motifs.push_back(m);
+        }
+    }
+
+
+    while(motifs.size() != used_motifs.size()) {
+        for(auto const & m : motifs) {
+            if(used_motifs.find(m) != used_motifs.end()) { continue; }
+            for(auto const kv : used_motifs) {
+                for(auto const & end : m->ends()) {
+                    if (kv.first->ends()[0] == end) {
+                        levels[m] = levels[kv.first] + 1;
+                        children[kv.first].push_back(m);
+                        used_motifs[m] = 1;
+                    }
+                }
+            }
+        }
+     }
+
+    auto sub_structures = std::vector<secondary_structure::MotifOPs>();
+
+    for(auto const & m : head_motifs) {
+        auto seen = std::map<secondary_structure::MotifOP, int>();
+        auto current_children = children[m];
+        std::cout << current_children.size() << std::endl;
+    }
+
+    exit(0);
+
     _generate_inital_sequence(p);  // generate initial sequence, get rid as many violations as possible
     scorer_.setup(p);
 
@@ -98,7 +153,7 @@ SequenceDesigner::design(
         _set_bp_sequence(pair, designable_bps_[pos]);
         next_violations_ = seq_constraints_.violations(p);
 
-        if(_new_sequence_violations()) {
+        if(_new_sequence_violations(current_violations_, next_violations_)) {
             _set_bp_sequence(last_pair, designable_bps_[pos]);
             continue;
         }
@@ -148,6 +203,7 @@ SequenceDesigner::_find_designable_bps(
         if(bp->res1()->res_type() == secondary_structure::ResType::NONE &&
            bp->res2()->res_type() == secondary_structure::ResType::NONE ) {
             designable_bps_.push_back(bp);
+            designable_uuid_bps_.push_back(bp->uuid());
         }
     }
 
@@ -159,9 +215,11 @@ SequenceDesigner::_find_designable_bps(
 
 
 bool
-SequenceDesigner::_new_sequence_violations() {
-    for(int i = 0; i < current_violations_.size(); i++) {
-        if(current_violations_[i] != next_violations_[i]) { return true; }
+SequenceDesigner::_new_sequence_violations(
+        Ints const & current_violations,
+        Ints const & next_violations) {
+    for(int i = 0; i < current_violations.size(); i++) {
+        if(current_violations[i] != next_violations[i]) { return true; }
     }
     return false;
 }
@@ -180,7 +238,7 @@ SequenceDesigner::_generate_inital_sequence(
     }
 
     next_violations_ = seq_constraints_.violations(p);
-    while(_new_sequence_violations()) {
+    while(_new_sequence_violations(current_violations_, next_violations_)) {
         count += 1;
         auto pos = rng_.randrange(designable_bps_.size());
         auto & pair = _get_random_pair();
@@ -194,6 +252,137 @@ SequenceDesigner::_generate_inital_sequence(
     }
 
 }
+
+
+void
+SequenceDesigner::_set_initial_helix_sequence(
+        secondary_structure::MotifOP h) {
+    int n_bps = h->residues().size()/2;
+    auto designable_1 = Ints(n_bps);
+    auto designable_2 = Ints(n_bps);
+    int i = 0;
+    for(auto const & r : h->chains()[0]->residues()) {
+        if(designable_uuid_res_.find(r->num()) != designable_uuid_res_.end()) {
+            designable_1[i] = 1;
+        }
+        else {
+            designable_1[i] = 0;
+        }
+        i++;
+    }
+
+    for(auto const & r : h->chains()[1]->residues()) {
+        i--;
+        if(designable_uuid_res_.find(r->num()) != designable_uuid_res_.end()) {
+            designable_2[i] = 1;
+        }
+        else {
+            designable_2[i] = 0;
+        }
+    }
+
+    auto res_types_1 = secondary_structure::ResTypes(n_bps);
+    auto res_types_2 = secondary_structure::ResTypes(n_bps);
+    auto res_type_bp = secondary_structure::ResTypes(2);
+
+    auto gc_count = 0;
+    auto c_violations = seq_constraints_.violations(h);
+    auto n_violations = Ints(c_violations);
+    while(1) {
+        i = 0;
+        for(auto & bp : h->basepairs()) {
+            // can design both sides of the helix
+            if(designable_1[i] && designable_2[i]) {
+                if ((i == 0 || i == n_bps - 1) && parameters_.biased_gc_caps) {
+                    _get_random_res_type_pair_gc_cap(res_type_bp);
+                } else {
+                    _get_random_res_type_pair(res_type_bp);
+                }
+            }
+            // cannot design either side
+            else if(designable_1[i] == 0 && designable_2[i] == 0) {
+                res_type_bp[0] = bp->res1()->res_type();
+                res_type_bp[1] = bp->res2()->res_type();
+            }
+            // cannot design first residue
+            else if(designable_1[i] == 0) {
+                res_type_bp[0] = bp->res1()->res_type();
+                res_type_bp[1] = secondary_structure::get_complement_res_type(bp->res1()->res_type());
+            }
+            // cannot design second residue
+            else if(designable_2[i] == 0) {
+                res_type_bp[0] = secondary_structure::get_complement_res_type(bp->res2()->res_type());
+                res_type_bp[1] = bp->res2()->res_type();
+            }
+
+            res_types_1[i] = res_type_bp[0];
+            res_types_2[i] = res_type_bp[1];
+
+            bp->res1()->res_type(res_type_bp[0]);
+            bp->res2()->res_type(res_type_bp[1]);
+
+            i += 1;
+        }
+
+        n_violations = seq_constraints_.violations(h);
+
+        for(auto const & e : c_violations) {
+            std::cout << e << " ";
+        }
+        std::cout << std::endl;
+
+        for(auto const & e : n_violations) {
+            std::cout << e << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << h->sequence() << std::endl;
+
+
+
+        exit(0);
+    }
+
+}
+
+void
+SequenceDesigner::_get_random_res_type_pair_gc_cap(
+        secondary_structure::ResTypes & pair) {
+    // biased base pair selection for caped ends, 80% chance to be GC/CG over AU/UA
+    // will do GCs
+    if(rng_.randrange(1000) > 200) {
+        // selecting GC
+        if(rng_.randrange(1000) > 500) {
+            pair[0] = secondary_structure::ResType::GUA;
+            pair[1] = secondary_structure::ResType::CYT;
+        }
+        // selecting CG
+        else {
+            pair[0] = secondary_structure::ResType::CYT;
+            pair[1] = secondary_structure::ResType::GUA;
+        }
+    }
+
+    else {
+        // selecting AU
+        if(rng_.randrange(1000) > 500) {
+            pair[0] = secondary_structure::ResType::ADE;
+            pair[1] = secondary_structure::ResType::URA;
+        }
+        // selecting UA
+        else {
+            pair[0] = secondary_structure::ResType::URA;
+            pair[1] = secondary_structure::ResType::ADE;
+        }
+    }
+}
+
+void
+SequenceDesigner::_get_random_res_type_pair(
+        secondary_structure::ResTypes & pair) {
+    pair = possible_rt_bps_[rng_.randrange(possible_rt_bps_.size())];
+}
+
 
 }
 
