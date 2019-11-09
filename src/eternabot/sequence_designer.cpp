@@ -85,12 +85,48 @@ SequenceDesigner::design(
     for(auto const & r : p->residues()) {
         if(r->res_type() == secondary_structure::ResType::NONE) {
             designable_uuid_res_[r->num()] = 1;
+            r->res_type(secondary_structure::ResType::ADE);
         }
     }
 
     _set_initial_helix_sequence(motifs[0]);
 
+    // get all non bp-step motifs
+    for(auto const & m : p->motifs()) {
+        if(m->mtype() == util::MotifType::HELIX) { continue; }
+        motifs.push_back(m);
+    }
+    scorer_.setup(p);
+
+
+    //std::cout << scorer_.score_secondary_structure(p) << std::endl;
+
+    auto moves = MonteCarloMoveOPs(2);
+    moves[0] = std::make_shared<BPSwapMove>(designable_bps_, possible_rt_bps_);
+
+    std::cout << p->sequence() << std::endl;
+
+    auto current_score = scorer_.score_secondary_structure(p);
+    auto current_sequence = p->sequence();
+    auto next_score = 0.0f;
+    auto best_score = current_score;
+    auto best_sequence = String("");
+
+    for(int i = 0; i < 100; i++) {
+        moves[0]->move(p);
+        next_score = scorer_.score_secondary_structure(p);
+
+        if(next_score > best_score) {
+            best_score = next_score;
+            best_sequence = p->sequence();
+        }
+    }
+
+    std::cout << best_sequence << " " << best_score << std::endl;
+
     exit(0);
+
+    /*
 
     for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
@@ -173,7 +209,9 @@ SequenceDesigner::design(
         }
     }
 
-    results_.push_back(std::make_shared<SequenceDesignerResult>(best_sequence, best_score));
+    */
+
+    //results_.push_back(std::make_shared<SequenceDesignerResult>(best_sequence, best_score));
     return results_;
     
 }
@@ -203,7 +241,6 @@ SequenceDesigner::_find_designable_bps(
         if(bp->res1()->res_type() == secondary_structure::ResType::NONE &&
            bp->res2()->res_type() == secondary_structure::ResType::NONE ) {
             designable_bps_.push_back(bp);
-            designable_uuid_bps_.push_back(bp->uuid());
         }
     }
 
@@ -219,7 +256,7 @@ SequenceDesigner::_new_sequence_violations(
         Ints const & current_violations,
         Ints const & next_violations) {
     for(int i = 0; i < current_violations.size(); i++) {
-        if(current_violations[i] != next_violations[i]) { return true; }
+        if(current_violations[i] < next_violations[i]) { return true; }
     }
     return false;
 }
@@ -288,7 +325,8 @@ SequenceDesigner::_set_initial_helix_sequence(
     auto gc_count = 0;
     auto c_violations = seq_constraints_.violations(h);
     auto n_violations = Ints(c_violations);
-    while(1) {
+    auto iter = 0;
+    while(true) {
         i = 0;
         for(auto & bp : h->basepairs()) {
             // can design both sides of the helix
@@ -324,24 +362,24 @@ SequenceDesigner::_set_initial_helix_sequence(
             i += 1;
         }
 
+        iter += 1;
+        if(iter > 1000) {
+            LOG_WARNING << "could not find suitable starting sequence for helix";
+            break;
+        }
+
         n_violations = seq_constraints_.violations(h);
-
-        for(auto const & e : c_violations) {
-            std::cout << e << " ";
+        if(_new_sequence_violations(c_violations, n_violations)) {
+            continue;
         }
-        std::cout << std::endl;
 
-        for(auto const & e : n_violations) {
-            std::cout << e << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << h->sequence() << std::endl;
+        break;
 
 
-
-        exit(0);
     }
+
+    //std::cout << h->sequence() << std::endl;
+
 
 }
 

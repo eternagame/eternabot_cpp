@@ -43,12 +43,87 @@ struct sequence_designer_result_less_than_key {
     }
 };
 
+class MonteCarloMove {
+public:
+    MonteCarloMove() = default;
+
+    virtual
+    ~MonteCarloMove() = default;
+
+    virtual
+    MonteCarloMove *
+    clone() const = 0;
+
+public:
+    virtual
+    int
+    move(
+            secondary_structure::PoseOP) = 0;
+
+    virtual
+    void
+    undo(
+            secondary_structure::PoseOP) = 0;
+};
+
+class BPSwapMove : public MonteCarloMove {
+public:
+    BPSwapMove(
+            secondary_structure::BasepairOPs designable_bps,
+            std::vector<secondary_structure::ResTypes> possible_rt_types):
+            designable_bps_(designable_bps),
+            possible_rt_types_(possible_rt_types),
+            rng_(util::RandomNumberGenerator()) {
+        last_res_types_ = secondary_structure::ResTypes(2);
+    }
+
+    ~BPSwapMove() = default;
+
+    MonteCarloMove *
+    clone() const { return new BPSwapMove(*this); }
+
+public:
+    int
+    move(
+            secondary_structure::PoseOP p) {
+        current_ = designable_bps_[rng_.randrange((int)designable_bps_.size())];
+        last_res_types_[0] = current_->res1()->res_type();
+        last_res_types_[1] = current_->res2()->res_type();
+
+        current_res_types_ = possible_rt_types_[rng_.randrange((int)possible_rt_types_.size())];
+        current_->res1()->res_type(current_res_types_[0]);
+        current_->res2()->res_type(current_res_types_[1]);
+
+
+        //designable_bps_[0]->res1()->res_type(secondary_structure::ResType::NONE);
+        return 1;
+    }
+
+    void
+    undo(
+            secondary_structure::PoseOP p) {
+        current_->res1()->res_type(last_res_types_[0]);
+        current_->res2()->res_type(last_res_types_[1]);
+    }
+
+private:
+    secondary_structure::BasepairOPs designable_bps_;
+    secondary_structure::BasepairOP current_;
+    std::vector<secondary_structure::ResTypes> possible_rt_types_;
+    util::RandomNumberGenerator rng_;
+    secondary_structure::ResTypes last_res_types_, current_res_types_;
+
+};
+
+typedef std::shared_ptr<MonteCarloMove> MonteCarloMoveOP;
+typedef std::vector<MonteCarloMoveOP> MonteCarloMoveOPs;
+
     
 class SequenceDesigner {
 public:
     SequenceDesigner();
     
-    ~SequenceDesigner() {}
+    ~SequenceDesigner() = default;
 
 public:
     
@@ -134,7 +209,6 @@ private: // new and possibly badly made functions
     _get_random_res_type_pair(
             secondary_structure::ResTypes &);
 
-
 private:
     struct Parameters {
         bool biased_gc_caps;
@@ -142,7 +216,6 @@ private:
 
 
 private:
-    std::vector<util::Uuid> designable_uuid_bps_;
     std::map<int, int> designable_uuid_res_;
     std::vector<Strings> possible_bps_;
     std::vector<secondary_structure::ResTypes> possible_rt_bps_;
