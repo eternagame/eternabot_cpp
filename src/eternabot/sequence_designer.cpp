@@ -84,12 +84,19 @@ SequenceDesigner::design(
     _find_designable_bps(p);       // find all basepairs with N-N residues
     for(auto const & r : p->residues()) {
         if(r->res_type() == secondary_structure::ResType::NONE) {
-            designable_uuid_res_[r->num()] = 1;
+            designable_res_.push_back(r);
+            auto bps = p->get_basepair(r->uuid());
+            if(bps.size() == 0) {
+                designable_unpaired_res_.push_back(r);
+            }
+
             r->res_type(secondary_structure::ResType::ADE);
         }
     }
 
-    _set_initial_helix_sequence(motifs[0]);
+    for(auto const & h : motifs) {
+        _set_initial_helix_sequence(h);
+    }
 
     // get all non bp-step motifs
     for(auto const & m : p->motifs()) {
@@ -99,10 +106,10 @@ SequenceDesigner::design(
     scorer_.setup(p);
 
 
-    //std::cout << scorer_.score_secondary_structure(p) << std::endl;
-
+    auto current_move = MonteCarloMoveOP(nullptr);
     auto moves = MonteCarloMoveOPs(2);
-    moves[0] = std::make_shared<BPSwapMove>(designable_bps_, possible_rt_bps_);
+    moves[0] = std::make_shared<MutateBPMove>(designable_bps_, possible_rt_bps_);
+    moves[1] = std::make_shared<MutateUnpairedResMove>(designable_unpaired_res_);
 
     std::cout << p->sequence() << std::endl;
 
@@ -110,10 +117,32 @@ SequenceDesigner::design(
     auto current_sequence = p->sequence();
     auto next_score = 0.0f;
     auto best_score = current_score;
+    std::cout << current_score << std::endl;
     auto best_sequence = String("");
+    auto pos = 0;
+    exit(0);
 
-    for(int i = 0; i < 100; i++) {
-        moves[0]->move(p);
+    if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
+        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score));
+        return results_;
+    }
+
+    for(int i = 0; i < 10000; i++) {
+        pos = rng_.randrange(1000);
+        if(pos < 500) {
+            current_move = moves[0];
+        }
+        else {
+            current_move = moves[1];
+        }
+
+        // move didn't do anything, try again
+        if(current_move->move(p) == 0) {
+            i--;
+            continue;
+        }
+
+
         next_score = scorer_.score_secondary_structure(p);
 
         if(next_score > best_score) {
@@ -244,10 +273,6 @@ SequenceDesigner::_find_designable_bps(
         }
     }
 
-    if(designable_bps_.size() == 0) {
-        LOG_ERROR << "no basepairs are designable! "; exit(0);
-    }
-
 }
 
 
@@ -299,7 +324,7 @@ SequenceDesigner::_set_initial_helix_sequence(
     auto designable_2 = Ints(n_bps);
     int i = 0;
     for(auto const & r : h->chains()[0]->residues()) {
-        if(designable_uuid_res_.find(r->num()) != designable_uuid_res_.end()) {
+        if(std::find(designable_res_.begin(), designable_res_.end(), r) != designable_res_.end()) {
             designable_1[i] = 1;
         }
         else {
@@ -310,7 +335,7 @@ SequenceDesigner::_set_initial_helix_sequence(
 
     for(auto const & r : h->chains()[1]->residues()) {
         i--;
-        if(designable_uuid_res_.find(r->num()) != designable_uuid_res_.end()) {
+        if(std::find(designable_res_.begin(), designable_res_.end(), r) != designable_res_.end()) {
             designable_2[i] = 1;
         }
         else {

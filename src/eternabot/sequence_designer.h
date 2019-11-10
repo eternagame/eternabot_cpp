@@ -66,9 +66,9 @@ public:
             secondary_structure::PoseOP) = 0;
 };
 
-class BPSwapMove : public MonteCarloMove {
+class MutateBPMove : public MonteCarloMove {
 public:
-    BPSwapMove(
+    MutateBPMove(
             secondary_structure::BasepairOPs designable_bps,
             std::vector<secondary_structure::ResTypes> possible_rt_types):
             designable_bps_(designable_bps),
@@ -77,25 +77,30 @@ public:
         last_res_types_ = secondary_structure::ResTypes(2);
     }
 
-    ~BPSwapMove() = default;
+    ~MutateBPMove() = default;
 
     MonteCarloMove *
-    clone() const { return new BPSwapMove(*this); }
+    clone() const { return new MutateBPMove(*this); }
 
 public:
     int
     move(
             secondary_structure::PoseOP p) {
+
+        if(designable_bps_.size() == 0) { return 0; }
+
         current_ = designable_bps_[rng_.randrange((int)designable_bps_.size())];
         last_res_types_[0] = current_->res1()->res_type();
         last_res_types_[1] = current_->res2()->res_type();
 
-        current_res_types_ = possible_rt_types_[rng_.randrange((int)possible_rt_types_.size())];
-        current_->res1()->res_type(current_res_types_[0]);
-        current_->res2()->res_type(current_res_types_[1]);
+        while(true) {
+            current_res_types_ = possible_rt_types_[rng_.randrange((int) possible_rt_types_.size())];
+            current_->res1()->res_type(current_res_types_[0]);
+            current_->res2()->res_type(current_res_types_[1]);
+            if(current_res_types_[0] != last_res_types_[0]) { break; }
 
+        }
 
-        //designable_bps_[0]->res1()->res_type(secondary_structure::ResType::NONE);
         return 1;
     }
 
@@ -114,6 +119,59 @@ private:
     secondary_structure::ResTypes last_res_types_, current_res_types_;
 
 };
+
+class MutateUnpairedResMove : public MonteCarloMove {
+public:
+    MutateUnpairedResMove(
+            secondary_structure::ResidueOPs designable_unpaired_res):
+            designable_unpaired_res_(designable_unpaired_res) {
+        possible_res_types_ = secondary_structure::ResTypes {
+            secondary_structure::ResType::ADE,
+            secondary_structure::ResType::CYT,
+            secondary_structure::ResType::GUA,
+            secondary_structure::ResType::URA
+        };
+
+    }
+
+    ~MutateUnpairedResMove() = default;
+
+    MonteCarloMove *
+    clone() const { return new MutateUnpairedResMove(*this); }
+
+public:
+    int
+    move(
+            secondary_structure::PoseOP p) {
+
+        if(designable_unpaired_res_.size() == 0) { return 0; }
+
+        current_ = designable_unpaired_res_[rng_.randrange((int)designable_unpaired_res_.size())];
+        last_res_type_ = current_->res_type();
+        while(true) {
+            current_res_type_ = possible_res_types_[rng_.randrange((int)possible_res_types_.size())];
+            current_->res_type(current_res_type_);
+            if(current_res_type_ != last_res_type_) { break; }
+        }
+        return 1;
+    }
+
+    void
+    undo(
+            secondary_structure::PoseOP p) {
+        current_->res_type(last_res_type_);
+
+    }
+
+private:
+    secondary_structure::ResidueOP current_;
+    secondary_structure::ResidueOPs designable_unpaired_res_;
+    secondary_structure::ResTypes possible_res_types_;
+    secondary_structure::ResType last_res_type_, current_res_type_;
+    util::RandomNumberGenerator rng_;
+
+};
+
 
 typedef std::shared_ptr<MonteCarloMove> MonteCarloMoveOP;
 typedef std::vector<MonteCarloMoveOP> MonteCarloMoveOPs;
@@ -216,7 +274,8 @@ private:
 
 
 private:
-    std::map<int, int> designable_uuid_res_;
+    secondary_structure::ResidueOPs designable_res_;
+    secondary_structure::ResidueOPs designable_unpaired_res_;
     std::vector<Strings> possible_bps_;
     std::vector<secondary_structure::ResTypes> possible_rt_bps_;
     base::Options options_;

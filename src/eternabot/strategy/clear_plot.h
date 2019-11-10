@@ -52,7 +52,7 @@ public:
             if(fail) { penalty += features->dotplot[i].p; }
             
         }
-        
+
         float plotscore = 0;
         float gc_penalty = 0;
         if(npairs > 0) {
@@ -94,9 +94,11 @@ public:
             cap_score = cap_score / stack_count;
         }
         
-
-        
-        float score =  (2.0 + cap_score * params_[1] + plotscore * params_[0] - gc_penalty * params_[2]) * 25;
+        std::cout << "params: " << cap_score << " " << plotscore << " " << gc_penalty << std::endl;
+        // JDY Changed
+        //         float score =  (2.0 + cap_score * params_[1] + plotscore * params_[0] - gc_penalty * params_[2]) * 25;
+        float score =  (4.0 + cap_score * params_[1] + plotscore * params_[0] - gc_penalty * params_[2]) * 25;
+        std::cout << "score: " << score << std::endl;
         return score;
     }
     
