@@ -26,18 +26,18 @@ public:
         mean_ = 82.3365692703;
         stdev_ = 12.050647236;
     }
-    
+
     ~CleanPlotStackCapsandSafeGC() {}
-    
+
 public:
-    
+
     float
     score(FeaturesOP const & features) {
-        
+
         float penalty = 0.0;
         int n = features->length;
         float npairs = features->gc + features->gu + features->ua;
-        
+
         int i_index, j_index;
         int fail = 0;
         for(int i = 0; i < n*n; i++) {
@@ -45,12 +45,12 @@ public:
             fail = 0;
             i_index = features->dotplot[i].i;
             j_index = features->dotplot[i].j;
-            
+
             if     (features->pairmap.find(i_index) == features->pairmap.end()) { fail = 1; }
             else if(features->pairmap.at(i_index) != j_index)                   { fail = 1; }
 
             if(fail) { penalty += features->dotplot[i].p; }
-            
+
         }
 
         float plotscore = 0;
@@ -61,7 +61,7 @@ public:
                 gc_penalty = 1;
             }
         }
-        
+
         float cap_score = 0.0f, stack_count = 0.0f;
         int length;
         for(auto const & helix : features->helices) {
@@ -72,15 +72,15 @@ public:
             else if(helix->basepairs().size() == 2) {
                 if(secondary_structure::is_gc_pair(helix->basepairs()[0])) { cap_score += 0.5; }
                 if(secondary_structure::is_gc_pair(helix->basepairs()[1])) { cap_score += 0.5; }
-                
+
             }
-            
+
             else if(helix->basepairs().size() == 3) {
                 if(secondary_structure::is_gc_pair(helix->basepairs()[0])) { cap_score += 0.4; }
                 if(secondary_structure::is_gc_pair(helix->basepairs()[1])) { cap_score += 0.4; }
                 if(secondary_structure::is_gc_pair(helix->basepairs()[2])) { cap_score += 0.4; }
             }
-            
+
             else {
                 length = (int)helix->basepairs().size();
                 if(secondary_structure::is_gc_pair(helix->basepairs()[0])) { cap_score += 1.0 / 3.0; }
@@ -89,19 +89,17 @@ public:
                 if(secondary_structure::is_gc_pair(helix->basepairs()[length-1])) { cap_score += 1.0 / 3.0; }
             }
         }
-        
+
         if(stack_count > 0) {
             cap_score = cap_score / stack_count;
         }
-        
-        std::cout << "params: " << cap_score << " " << plotscore << " " << gc_penalty << std::endl;
-        // JDY Changed
-        //         float score =  (2.0 + cap_score * params_[1] + plotscore * params_[0] - gc_penalty * params_[2]) * 25;
-        float score =  (4.0 + cap_score * params_[1] + plotscore * params_[0] - gc_penalty * params_[2]) * 25;
-        std::cout << "score: " << score << std::endl;
+
+
+
+        float score =  (2.0 + cap_score * params_[1] + plotscore * params_[0] - gc_penalty * params_[2]) * 25;
         return score;
     }
-    
+
 };
 
 }

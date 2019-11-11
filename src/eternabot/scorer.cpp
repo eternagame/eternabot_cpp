@@ -26,7 +26,7 @@ Scorer::score_secondary_structure(secondary_structure::PoseOP const & p) {
     for(auto const & s : strategies_) {
         scores_[i] = s->score(features_);
         total_score_ += scores_[i]*weights_[i];
-        std::cout << i << " " << scores_[i] << " " << weights_[i] << std::endl;
+        //std::cout << i << " " << scores_[i] << " " << weights_[i] << std::endl;
         i++;
     }
     //std::cout << total_score_ << std::endl;

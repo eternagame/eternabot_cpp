@@ -199,6 +199,10 @@ Parser::_walk_nodes(
 
     }
     chain_ = std::make_shared<Chain>(res);
+    if(last_node->connections()[2] == nullptr) {
+        return nullptr;
+    }
+
     return last_node->connections()[2]->partner(last_node->index());
 }
 
@@ -209,11 +213,13 @@ Parser::_generate_motif(
     
     auto next_n = _walk_nodes(n);
     auto chains = ChainOPs{chain_};
-    
-    while(next_n != n) {
-        next_n = _walk_nodes(next_n);
-        if(next_n == nullptr) { return nullptr; }
-        chains.push_back(chain_);
+
+    if(next_n != nullptr) {
+        while (next_n != n) {
+            next_n = _walk_nodes(next_n);
+            if (next_n == nullptr) { return nullptr; }
+            chains.push_back(chain_);
+        }
     }
     
     auto struc = std::make_shared<Structure>(chains);

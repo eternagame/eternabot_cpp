@@ -33,12 +33,12 @@ public:
         mean_ = 91.2420911348;
         stdev_ = 12.5663926344;
     }
-    
+
     ~NumofYellowNucleotidesperLengthofString() {}
-    
+
     float
     score(FeaturesOP const & features) {
-        
+
         float penalty = 0, count = 0;
         int stack_length;
         for(auto const & helix : features->helices) {
@@ -50,7 +50,7 @@ public:
                 //is a bp of AU or UA
                 if(secondary_structure::is_au_pair(bp)) { yellow_count ++; }
             }
-            
+
             if(helix->basepairs().size() > 9) {
                 float upper_limit = helix->basepairs().size()/2+1;
                 float lower_limit = 1;
@@ -63,27 +63,27 @@ public:
                 }
                 continue;
             }
-            
+
             if     (upper_length_[stack_length] < yellow_count) {
                 penalty += yellow_count - upper_length_[stack_length];
             }
             else if(lower_length_[stack_length] > yellow_count) {
                 penalty += lower_length_[stack_length] - yellow_count;
             }
-            
+
         }
         if(count == 0) { return 100; }
-        
+
         return 100 - params_[0] * penalty/float(features->length);
-        
+
     }
-    
-    
-    
+
+
+
 private:
     Ints upper_length_, lower_length_;
 };
-    
+
 }
 
 

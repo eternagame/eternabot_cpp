@@ -23,6 +23,8 @@ SequenceDesigner::SequenceDesigner():
         rng_(util::RandomNumberGenerator()) {
 
     parameters_.biased_gc_caps = true;
+    v_ = vienna::Vienna();
+
 
     possible_bps_ = std::vector<Strings>({{"A", "U"}, {"U", "A"}, {"G", "C"}, {"C", "G"}});
     possible_rt_bps_ = std::vector<secondary_structure::ResTypes>{
@@ -79,6 +81,15 @@ SequenceDesigner::design(
         secondary_structure::PoseOP const & p) {
     results_ = SequenceDesignerResultOPs();
 
+    pair_map_ = std::vector<std::vector<int>>(p->residues().size()+1);
+    for(int i = 0; i < p->residues().size()+1; i++) {
+        pair_map_[i] = std::vector<int>(p->residues().size()+1);
+    }
+    for(auto const & bp : p->basepairs()) {
+        pair_map_[bp->res1()->num()][bp->res2()->num()] = 1;
+        pair_map_[bp->res2()->num()][bp->res1()->num()] = 1;
+    }
+    pair_map_entries_ = p->residues().size()*p->residues().size();
     auto motifs = p->helices();
 
     _find_designable_bps(p);       // find all basepairs with N-N residues
@@ -93,69 +104,40 @@ SequenceDesigner::design(
             r->res_type(secondary_structure::ResType::ADE);
         }
     }
+    scorer_.setup(p);
 
     for(auto const & h : motifs) {
         _set_initial_helix_sequence(h);
     }
+    std::cout << p->sequence() << std::endl;
+    std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
+
+    auto score = _optimize_substructure(p, 10000);
+    std::cout << p->sequence() << " " << score << std::endl;
+    std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
+    std::cout << scorer_.score_secondary_structure(p) << std::endl;
+    exit(0);
+
 
     // get all non bp-step motifs
     for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
         motifs.push_back(m);
     }
-    scorer_.setup(p);
 
 
-    auto current_move = MonteCarloMoveOP(nullptr);
-    auto moves = MonteCarloMoveOPs(2);
-    moves[0] = std::make_shared<MutateBPMove>(designable_bps_, possible_rt_bps_);
-    moves[1] = std::make_shared<MutateUnpairedResMove>(designable_unpaired_res_);
-
-    std::cout << p->sequence() << std::endl;
-
-    auto current_score = scorer_.score_secondary_structure(p);
-    auto current_sequence = p->sequence();
-    auto next_score = 0.0f;
-    auto best_score = current_score;
-    std::cout << current_score << std::endl;
-    auto best_sequence = String("");
-    auto pos = 0;
-    exit(0);
-
+    // nothing to design! return just the score
     if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
+        auto current_score = scorer_.score_secondary_structure(p);
+        std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
         results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score));
         return results_;
     }
 
-    for(int i = 0; i < 10000; i++) {
-        pos = rng_.randrange(1000);
-        if(pos < 500) {
-            current_move = moves[0];
-        }
-        else {
-            current_move = moves[1];
-        }
-
-        // move didn't do anything, try again
-        if(current_move->move(p) == 0) {
-            i--;
-            continue;
-        }
+    //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
 
 
-        next_score = scorer_.score_secondary_structure(p);
 
-        if(next_score > best_score) {
-            best_score = next_score;
-            best_sequence = p->sequence();
-        }
-    }
-
-    std::cout << best_sequence << " " << best_score << std::endl;
-
-    exit(0);
-
-    /*
 
     for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
@@ -173,6 +155,10 @@ SequenceDesigner::design(
             head_motifs.push_back(m);
         }
     }
+
+
+
+    exit(0);
 
 
     while(motifs.size() != used_motifs.size()) {
@@ -200,45 +186,8 @@ SequenceDesigner::design(
 
     exit(0);
 
-    _generate_inital_sequence(p);  // generate initial sequence, get rid as many violations as possible
-    scorer_.setup(p);
 
-    auto current_score = scorer_.score_secondary_structure(p);
-    auto current_sequence = p->sequence();
-    auto best_score = current_score;
-    auto best_sequence = p->sequence();
-    auto next_score = 0.0f;
-    auto last_pair = Strings{"", ""};
 
-    for(int i = 0; i < steps_; i++) {
-        auto pos = rng_.randrange(designable_bps_.size());
-        auto & pair = _get_random_pair();
-        last_pair[0] = designable_bps_[pos]->res1()->name();
-        last_pair[1] = designable_bps_[pos]->res2()->name();
-        _set_bp_sequence(pair, designable_bps_[pos]);
-        next_violations_ = seq_constraints_.violations(p);
-
-        if(_new_sequence_violations(current_violations_, next_violations_)) {
-            _set_bp_sequence(last_pair, designable_bps_[pos]);
-            continue;
-        }
-
-        next_score = scorer_.score_secondary_structure(p);
-        if(mc_.accept(current_score, next_score)) {
-            current_score = next_score;
-        }
-        else {
-            _set_bp_sequence(last_pair, designable_bps_[pos]);
-            continue;
-        }
-
-        if(current_score > best_score) {
-            best_score = current_score;
-            best_sequence = p->sequence();
-        }
-    }
-
-    */
 
     //results_.push_back(std::make_shared<SequenceDesignerResult>(best_sequence, best_score));
     return results_;
@@ -248,19 +197,6 @@ SequenceDesigner::design(
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // private functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-Strings const &
-SequenceDesigner::_get_random_pair() {
-    return possible_bps_[rng_.randrange(possible_bps_.size())];
-}
-
-void
-SequenceDesigner::_set_bp_sequence(
-        Strings const & pair,
-        secondary_structure::BasepairOP bp) {
-    bp->res1()->name(pair[0]);
-    bp->res2()->name(pair[1]);
-}
 
 
 void
@@ -287,39 +223,9 @@ SequenceDesigner::_new_sequence_violations(
 }
 
 void
-SequenceDesigner::_generate_inital_sequence(
-        secondary_structure::PoseOP p) {
-
-    auto count = 0;
-    current_violations_ = seq_constraints_.violations(p);
-
-    // inital sequence filling
-    for (auto & bp : designable_bps_) {
-        auto & p = _get_random_pair();
-        _set_bp_sequence(p, bp);
-    }
-
-    next_violations_ = seq_constraints_.violations(p);
-    while(_new_sequence_violations(current_violations_, next_violations_)) {
-        count += 1;
-        auto pos = rng_.randrange(designable_bps_.size());
-        auto & pair = _get_random_pair();
-        _set_bp_sequence(pair, designable_bps_[pos]);
-        if(count > 1000000) {
-            LOG_WARNING << "cannot find initial sequence that does not have sequence violations! ";
-            current_violations_ = next_violations_;
-            break;
-        }
-        next_violations_ = seq_constraints_.violations(p);
-    }
-
-}
-
-
-void
 SequenceDesigner::_set_initial_helix_sequence(
         secondary_structure::MotifOP h) {
-    int n_bps = h->residues().size()/2;
+    auto n_bps = h->residues().size()/2;
     auto designable_1 = Ints(n_bps);
     auto designable_2 = Ints(n_bps);
     int i = 0;
@@ -447,8 +353,97 @@ SequenceDesigner::_get_random_res_type_pair(
 }
 
 
+float
+SequenceDesigner::_optimize_substructure(
+        secondary_structure::PoseOP p,
+        int steps) {
+
+    auto scorer = Scorer();
+    scorer.setup(p);
+    auto current_designable_bps = secondary_structure::BasepairOPs();
+    auto current_designable_unpaired_res = secondary_structure::ResidueOPs();
+    for(auto const & bp : p->basepairs()) {
+        if(std::find(designable_bps_.begin(), designable_bps_.end(), bp) != designable_bps_.end()) {
+            current_designable_bps.push_back(bp);
+        }
+    }
+    for(auto const & r : p->residues()) {
+        if(std::find(designable_unpaired_res_.begin(), designable_unpaired_res_.end(), r) != designable_unpaired_res_.end()) {
+            current_designable_unpaired_res.push_back(r);
+        }
+    }
+
+    auto current_move = MonteCarloMoveOP(nullptr);
+    auto moves = MonteCarloMoveOPs(2);
+    moves[0] = std::make_shared<MutateBPMove>(current_designable_bps, possible_rt_bps_);
+    moves[1] = std::make_shared<MutateUnpairedResMove>(current_designable_unpaired_res);
+
+    auto current_sequence = p->sequence();
+    auto next_score = 0.0f;
+    //auto best_score = scorer.score_secondary_structure(p);
+    auto best_score = _bp_list_diff(p, pair_map_, pair_map_entries_);
+    auto current_score = best_score;
+
+    auto best_sequence = p->sequence();
+    auto pos = 0;
+
+    for(int i = 0; i < steps; i++) {
+        pos = rng_.randrange(1000);
+        if(pos < 500) {
+            current_move = moves[0];
+        }
+        else {
+            current_move = moves[1];
+        }
+
+        // move didn't do anything, try again
+        if(current_move->move(p) == 0) {
+            i--;
+            continue;
+        }
+
+        //next_score = scorer_.score_secondary_structure(p);
+        next_score = _bp_list_diff(p, pair_map_, pair_map_entries_);
+
+        if(mc_.accept(current_score, next_score)) {
+            current_score = next_score;
+        }
+        else {
+            current_move->undo(p);
+        }
+
+        if(current_score < best_score) {
+            best_score = current_score;
+            best_sequence = p->sequence();
+        }
+    }
+
+    p->replace_sequence(best_sequence);
+
+    return best_score;
 }
 
+float
+SequenceDesigner::_bp_list_diff(
+        secondary_structure::PoseOP p,
+        std::vector<std::vector<int>> const & pair_map,
+        size_t pair_list_size) {
+
+    int pi = 0, pj = 0;
+    auto score = 0.0f;
+    auto & plist = v_.bp_probabilities(p->sequence());
+    for(int i = 0 ; i < pair_list_size; i++) {
+        if(plist[i].p < 0.001) { continue; }
+        pi = plist[i].i;
+        pj = plist[i].j;
+        score += abs(pair_map[pi][pj] - plist[i].p);
+    }
+    return score;
+
+}
+
+
+}
 
 
 

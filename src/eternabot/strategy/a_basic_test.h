@@ -28,11 +28,11 @@ public:
         params_[6] = 124.345433009;
         mean_ = 83.5007560083;
         stdev_ = 10.5290224709;
-        
+
     }
-    
+
     ~ABasicTest() {}
-    
+
     inline
     float
     score(FeaturesOP const & features) {
@@ -43,7 +43,7 @@ public:
         }
         float target_fe = params_[2] * total_pairs;
         score -= fabs(target_fe - features->fe) * params_[3];
-        
+
         if(features->meltpoint < params_[5]) {
             score -= fabs(features->meltpoint - params_[5]) * params_[4];
         }
@@ -52,9 +52,9 @@ public:
         }
         return score;
     }
-    
+
 };
-    
+
 }
 
 #endif /* defined(__RNAMake__a_basic_test__) */

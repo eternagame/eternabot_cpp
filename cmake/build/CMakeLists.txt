@@ -108,10 +108,15 @@ set(eternabot_files
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/scorer.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/feature_generator.cpp
+	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/modified_num_of_yellow.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/num_of_yellow.cpp
+	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/modified_clear_plot.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/direction_of_gc.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/berex_test.cpp
+	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/modified_direction_of_gc.cpp
+	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/modified_berex_test.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/clear_plot.cpp
+	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/modified_a_basic_test.cpp
 	/Users/jyesselm/projects/eternabot_cpp/src/eternabot/strategy/a_basic_test.cpp
 )
 

@@ -21,6 +21,32 @@
 
 namespace eternabot {
 
+class StrategyFactory {
+public:
+    StrategyOP
+    get_strategy(
+            String const & name) {
+        if(name == "ABasicTest") {
+            return std::make_shared<ABasicTest>();
+        }
+        else if(name == "CleanPlotStackCapsandSafeGC") {
+            return std::make_shared<CleanPlotStackCapsandSafeGC>();
+        }
+        else if(name == "DirectionofGCPairsinMultiLoops") {
+            return std::make_shared<DirectionofGCPairsinMultiLoops>();
+        }
+        else if(name == "BerexTest") {
+            return std::make_shared<BerexTest>();
+        }
+        else if(name == "NumofYellowNucleotidesperLengthofString") {
+            return std::make_shared<NumofYellowNucleotidesperLengthofString>();
+        }
+        else {
+            throw secondary_structure::Exception("unknown strategy name");
+        }
+    }
+};
+
 class Scorer {
 public:
     
@@ -28,25 +54,32 @@ public:
         generator_( FeatureGenerator() ),
         strategies_( StrategyOPs() ),
         weights_ ( Floats() ) {
-        
-        strategies_.push_back(std::make_shared<ABasicTest>());
-        strategies_.push_back(std::make_shared<CleanPlotStackCapsandSafeGC>());
-        strategies_.push_back(std::make_shared<DirectionofGCPairsinMultiLoops>());
-        strategies_.push_back(std::make_shared<BerexTest>());
-        strategies_.push_back(std::make_shared<NumofYellowNucleotidesperLengthofString>());
-        
-        weights_.push_back(0.09281782);
-        weights_.push_back(0.1250677);
-        weights_.push_back(0.2156337);
-        weights_.push_back(0.3661276);
-        weights_.push_back(0.2230357);
-        
+
+        auto strat_factory = StrategyFactory();
+        auto names = Strings{"ABasicTest", "CleanPlotStackCapsandSafeGC", "DirectionofGCPairsinMultiLoops", "BerexTest",
+                             "NumofYellowNucleotidesperLengthofString"};
+        weights_ = Floats{0.09281782, 0.1250677, 0.2156337, 0.3661276, 0.2230357};
+        for(auto const & name : names) {
+            strategies_.push_back(strat_factory.get_strategy(name));
+        }
+
         scores_ = Floats( strategies_.size() );
-        mean_ = 84.8005952381;
-        stdev_ = 16.4725276237;
         
     }
-    
+
+    Scorer(
+            Strings const & strategy_names,
+            Floats const & weights):
+            weights_(weights) {
+        auto strat_factory = StrategyFactory();
+        for(auto const & name : strategy_names) {
+            strategies_.push_back(strat_factory.get_strategy(name));
+        }
+
+        scores_ = Floats( strategies_.size() );
+    }
+
+
     ~Scorer() {}
 
 public:

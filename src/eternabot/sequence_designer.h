@@ -232,14 +232,6 @@ protected:
     update_var_options();
 
 private:
-    Strings const &
-    _get_random_pair();
-
-    void
-    _set_bp_sequence(
-            Strings const &,
-            secondary_structure::BasepairOP);
-
     void
     _find_designable_bps(
             secondary_structure::PoseOP);
@@ -267,6 +259,17 @@ private: // new and possibly badly made functions
     _get_random_res_type_pair(
             secondary_structure::ResTypes &);
 
+    float
+    _optimize_substructure(
+            secondary_structure::PoseOP,
+            int);
+
+    float
+    _bp_list_diff(
+            secondary_structure::PoseOP,
+            std::vector<std::vector<int>> const &,
+            size_t);
+
 private:
     struct Parameters {
         bool biased_gc_caps;
@@ -291,6 +294,12 @@ private:
 
     // current solutions
     std::map<secondary_structure::MotifOP, secondary_structure::ResTypes> current_restypes_;
+
+    // directly keep track of vienna pair map
+    std::vector<std::vector<int>> pair_map_;
+    size_t pair_map_entries_;
+    vienna::Vienna v_;
+
 
     int designs_, steps_;
     float temperature_;
