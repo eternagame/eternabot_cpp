@@ -109,15 +109,6 @@ SequenceDesigner::design(
     for(auto const & h : motifs) {
         _set_initial_helix_sequence(h);
     }
-    std::cout << p->sequence() << std::endl;
-    std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-
-    auto score = _optimize_substructure(p, 1000);
-    std::cout << p->sequence() << " " << score << std::endl;
-    std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-    std::cout << scorer_.print_scores(p) << std::endl;
-    exit(0);
-
 
     // get all non bp-step motifs
     for(auto const & m : p->motifs()) {
@@ -129,12 +120,29 @@ SequenceDesigner::design(
     // nothing to design! return just the score
     if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
         auto current_score = scorer_.score_secondary_structure(p);
-        std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score));
+        auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
+        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
+        std::cout << scorer_.print_scores(p) << std::endl;
+
         return results_;
     }
 
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
+    //std::cout << p->sequence() << std::endl;
+    //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
+
+    auto score = _optimize_substructure(p, 1000);
+    //std::cout << p->sequence() << " " << score << std::endl;
+    //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
+    //std::cout << scorer_.print_scores(p) << std::endl;
+    scorer_.score_secondary_structure(p);
+    auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
+
+    results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), score, bp_diff_score));
+    return results_;
+
+    exit(0);
+
 
 
 
@@ -381,7 +389,8 @@ SequenceDesigner::_optimize_substructure(
     auto current_sequence = p->sequence();
     auto next_score = 0.0f;
     //auto best_score = scorer.score_secondary_structure(p);
-    auto best_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_)/5)*scorer.score_secondary_structure(p);
+    auto eternabot_score = 0.0f;
+    auto best_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/5)*scorer.score_secondary_structure(p);
     auto current_score = best_score;
 
     auto best_sequence = p->sequence();
@@ -403,7 +412,8 @@ SequenceDesigner::_optimize_substructure(
         }
 
         //next_score = scorer_.score_secondary_structure(p);
-        next_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_)/5)*scorer.score_secondary_structure(p);
+        eternabot_score = scorer.score_secondary_structure(p);
+        next_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/5)*eternabot_score;
 
         if(mc_.accept(next_score, current_score)) {
             current_score = next_score;
@@ -427,11 +437,12 @@ float
 SequenceDesigner::_bp_list_diff(
         secondary_structure::PoseOP p,
         std::vector<std::vector<int>> const & pair_map,
-        size_t pair_list_size) {
+        size_t pair_list_size,
+        FeaturesOP features) {
 
     int pi = 0, pj = 0;
     auto score = 0.0f;
-    auto & plist = v_.bp_probabilities(p->sequence());
+    auto & plist = features->dotplot;
     for(int i = 0 ; i < pair_list_size; i++) {
         if(plist[i].p < 0.001) { continue; }
         pi = plist[i].i;

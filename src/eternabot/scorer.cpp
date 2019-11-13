@@ -44,10 +44,25 @@ Scorer::print_scores(secondary_structure::PoseOP const & p) {
     for(auto const & s : strategies_) {
         scores_[i] = s->score(features_);
         total_score_ += scores_[i]*weights_[i];
-        std::cout << i << " " << scores_[i] << " " << weights_[i] << std::endl;
+        std::cout << s->name() << " " << scores_[i] << " " << weights_[i] << std::endl;
         i++;
     }
     return total_score_;
+}
+
+Floats
+Scorer::get_scores(secondary_structure::PoseOP const & p) {
+    generator_.update_features(features_, p);
+    auto scores = Floats();
+
+    total_score_ = 0;
+    int i = 0;
+    for(auto const & s : strategies_) {
+        scores.push_back(s->score(features_));
+
+
+    }
+    return scores;
 }
 
 

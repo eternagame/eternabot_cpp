@@ -20,7 +20,7 @@ EternabotApp::setup_options() {
     add_option("ss", String(""), base::OptionType::STRING, true);
     add_option("steps", 100, base::OptionType::INT);
     add_option("n", 1, base::OptionType::INT);
-    add_option("out_file", "eternabot.scores", base::OptionType::STRING);
+    add_option("out_file", "eternabot.csv", base::OptionType::STRING);
 
 }
 
@@ -54,15 +54,18 @@ EternabotApp::run() {
 
     auto out = std::ofstream();
     out.open(parameters_.out_file);
-    out << "opt_num,opt_score,opt_sequence,longest_gc_stretch" << std::endl;
+    out << "opt_num,structure,opt_score,bp_diff_score,opt_sequence,longest_gc_stretch" << std::endl;
 
     auto parser = secondary_structure::Parser();
+    auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);
+    std::cout << "made it" << std::endl;
     for(int i = 0; i < parameters_.n; i++) {
-        auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);
+        std::cout << i << std::endl;
         auto results = designer.design(p);
         p->replace_sequence(results[0]->sequence);
-        std::cout << results[0]->score << " " << results[0]->sequence << " " << p->dot_bracket() << std::endl;
-        out << i << "," << results[0]->score << "," << results[0]->sequence << ",";
+        std::cout << results[0]->score << " " << results[0]->bp_diff_score << " " <<  results[0]->sequence << " " << p->dot_bracket() << std::endl;
+        out << i << "," << p->dot_bracket() << "," << results[0]->score << "," << results[0]->bp_diff_score << ",";
+        out << results[0]->sequence << ",";
         out << secondary_structure::find_longest_gc_helix_stretch(p) << std::endl;
 
     }

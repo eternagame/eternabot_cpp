@@ -44,22 +44,22 @@ public:
     score(FeaturesOP const & features) {
 
         float score = 100;
-        score -= fabs(features->g_count / features->length - params_[0]) * params_[1];
-        score -= fabs(features->u_count / features->length - params_[2]) * params_[3];
-        score -= fabs(features->c_count / features->length - params_[4]) * params_[5];
+        score -= abs(float(features->g_count) / float(features->length) - params_[0]) * params_[1];
+        score -= abs(float(features->u_count) / float(features->length) - params_[2]) * params_[3];
+        score -= abs(float(features->c_count) / float(features->length) - params_[4]) * params_[5];
 
         if     (features->fe < params_[6]) {
-            score -= fabs(features->fe - params_[6]) * params_[8];
+            score -= abs(features->fe - params_[6]) * params_[8];
         }
         else if(features->fe > params_[7]) {
-            score -= fabs(features->fe - params_[7]) * params_[8];
+            score -= abs(features->fe - params_[7]) * params_[8];
         }
 
         if     (features->meltpoint < params_[9]) {
-            score -= fabs(features->meltpoint - params_[9]) * params_[11];
+            score -= abs(features->meltpoint - params_[9]) * params_[11];
         }
         else if(features->meltpoint > params_[10]) {
-            score -= fabs(features->meltpoint - params_[10]) * params_[11];
+            score -= abs(features->meltpoint - params_[10]) * params_[11];
         }
 
         return score;

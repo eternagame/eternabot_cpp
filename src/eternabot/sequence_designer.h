@@ -23,12 +23,15 @@ struct SequenceDesignerResult {
     inline
     SequenceDesignerResult(
             String const & n_sequence,
-            float n_score):
+            float n_score,
+            float n_bp_diff_score):
             sequence(n_sequence),
-            score(n_score) {}
+            score(n_score),
+            bp_diff_score(n_bp_diff_score){}
 
     String sequence;
     float score;
+    float bp_diff_score;
 };
     
 typedef std::shared_ptr<SequenceDesignerResult> SequenceDesignerResultOP;
@@ -268,7 +271,8 @@ private: // new and possibly badly made functions
     _bp_list_diff(
             secondary_structure::PoseOP,
             std::vector<std::vector<int>> const &,
-            size_t);
+            size_t,
+            FeaturesOP);
 
 private:
     struct Parameters {

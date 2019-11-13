@@ -1,3 +1,13 @@
+cmake/build/
+cmake-build-debug
+
+
+CMakeLists.txt
+
+*.idea
+*.DS_store
+*.pyc
+
 # Prerequisites
 *.d
 

@@ -214,11 +214,17 @@ Parser::_generate_motif(
     auto next_n = _walk_nodes(n);
     auto chains = ChainOPs{chain_};
 
+    int i =0 ;
     if(next_n != nullptr) {
         while (next_n != n) {
             next_n = _walk_nodes(next_n);
             if (next_n == nullptr) { return nullptr; }
             chains.push_back(chain_);
+            std::cout << chains.size() << " " << next_n->data().residues[0]->num() << std::endl;
+            i += 1;
+            if(i > 10) {
+                exit(0);
+            }
         }
     }
     

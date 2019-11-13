@@ -18,6 +18,7 @@
 #include "eternabot/strategy/berex_test.h"
 #include "eternabot/strategy/num_of_yellow.h"
 #include "eternabot/strategy/direction_of_gc.h"
+#include "eternabot/strategy/modified_berex_test.h"
 
 namespace eternabot {
 
@@ -41,6 +42,9 @@ public:
         else if(name == "NumofYellowNucleotidesperLengthofString") {
             return std::make_shared<NumofYellowNucleotidesperLengthofString>();
         }
+        else if(name == "ModifiedBerexTest") {
+            return std::make_shared<ModifiedBerexTest>();
+        }
         else {
             throw secondary_structure::Exception("unknown strategy name");
         }
@@ -56,7 +60,7 @@ public:
         weights_ ( Floats() ) {
 
         auto strat_factory = StrategyFactory();
-        auto names = Strings{"ABasicTest", "CleanPlotStackCapsandSafeGC", "DirectionofGCPairsinMultiLoops", "BerexTest",
+        auto names = Strings{"ABasicTest", "CleanPlotStackCapsandSafeGC", "DirectionofGCPairsinMultiLoops", "ModifiedBerexTest",
                              "NumofYellowNucleotidesperLengthofString"};
         weights_ = Floats{0.09281782, 0.1250677, 0.2156337, 0.3661276, 0.2230357};
         for(auto const & name : names) {
@@ -92,12 +96,28 @@ public:
 
     float
     print_scores(secondary_structure::PoseOP const &);
+
+    Floats
+    get_scores(secondary_structure::PoseOP const &);
+
     
 public:
     
     Floats const &
     scores() { return scores_; }
-    
+
+    Strings
+    strategy_names() {
+        auto names = Strings();
+        for(auto const & s : strategies_) {
+            names.push_back(s->name());
+        }
+        return names;
+    }
+
+    FeaturesOP
+    features() { return features_; }
+
 private:
     FeatureGenerator generator_;
     FeaturesOP features_;
