@@ -25,6 +25,8 @@ public:
         params_[3] = 0.966424875922;
         mean_ = 82.3365692703;
         stdev_ = 12.050647236;
+        name_ = "CleanPlotStackCapsandSafeGC";
+
     }
 
     ~CleanPlotStackCapsandSafeGC() {}

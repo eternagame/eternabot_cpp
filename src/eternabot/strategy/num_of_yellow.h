@@ -32,6 +32,7 @@ public:
         lower_length_[9] = 1;
         mean_ = 91.2420911348;
         stdev_ = 12.5663926344;
+        name_ = "NumofYellowNucleotidesperLengthofString";
     }
 
     ~NumofYellowNucleotidesperLengthofString() {}

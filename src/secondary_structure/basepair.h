@@ -95,7 +95,7 @@ inline
 bool
 is_gc_pair(BasepairOP const & bp) {
     if     (bp->res1()->res_type() == ResType::GUA && bp->res2()->res_type() == ResType::CYT) { return true; }
-    else if(bp->res2()->res_type() == ResType::CYT && bp->res1()->res_type() == ResType::GUA) { return true; }
+    else if(bp->res1()->res_type() == ResType::CYT && bp->res2()->res_type() == ResType::GUA) { return true; }
     else { return false; }
 }
     
@@ -104,7 +104,7 @@ inline
 bool
 is_au_pair(BasepairOP const & bp) {
     if     (bp->res1()->res_type() == ResType::ADE && bp->res2()->res_type() == ResType::URA) { return true; }
-    else if(bp->res2()->res_type() == ResType::URA && bp->res1()->res_type() == ResType::ADE) { return true; }
+    else if(bp->res1()->res_type() == ResType::URA && bp->res2()->res_type() == ResType::ADE) { return true; }
     else { return false; }
 }
     
@@ -112,10 +112,27 @@ inline
 bool
 is_gu_pair(BasepairOP const & bp) {
     if     (bp->res1()->res_type() == ResType::GUA && bp->res2()->res_type() == ResType::URA) { return true; }
-    else if(bp->res2()->res_type() == ResType::URA && bp->res1()->res_type() == ResType::GUA) { return true; }
+    else if(bp->res1()->res_type() == ResType::URA && bp->res2()->res_type() == ResType::GUA) { return true; }
     else { return false; }
 }
-    
+
+enum class BPType {
+    AU, UA, CG, GC, GU, UG
+};
+
+inline
+BPType
+get_bp_type(
+        Basepair const & bp) {
+    if     (bp.res1()->res_type() == ResType::ADE && bp.res2()->res_type() == ResType::URA) { return BPType::AU; }
+    else if(bp.res1()->res_type() == ResType::URA && bp.res2()->res_type() == ResType::ADE) { return BPType::UA; }
+    else if(bp.res1()->res_type() == ResType::CYT && bp.res2()->res_type() == ResType::GUA) { return BPType::CG; }
+    else if(bp.res1()->res_type() == ResType::GUA && bp.res2()->res_type() == ResType::CYT) { return BPType::GC; }
+    else if(bp.res1()->res_type() == ResType::GUA && bp.res2()->res_type() == ResType::URA) { return BPType::GU; }
+    else if(bp.res1()->res_type() == ResType::URA && bp.res2()->res_type() == ResType::GUA) { return BPType::UG; }
+    else { throw secondary_structure::Exception("unknown basepair type"); }
+}
+
     
 }
 

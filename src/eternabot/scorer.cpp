@@ -35,5 +35,20 @@ Scorer::score_secondary_structure(secondary_structure::PoseOP const & p) {
     //return (total_score_ * stdev_) + mean_ ;
 }
 
+float
+Scorer::print_scores(secondary_structure::PoseOP const & p) {
+    generator_.update_features(features_, p);
+
+    total_score_ = 0;
+    int i = 0;
+    for(auto const & s : strategies_) {
+        scores_[i] = s->score(features_);
+        total_score_ += scores_[i]*weights_[i];
+        std::cout << i << " " << scores_[i] << " " << weights_[i] << std::endl;
+        i++;
+    }
+    return total_score_;
+}
+
 
 }

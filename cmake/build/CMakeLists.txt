@@ -134,3 +134,7 @@ add_executable(eternabot /Users/jyesselm/projects/eternabot_cpp/apps/eternabot/e
 target_link_libraries(eternabot all_lib)
 
 
+add_executable(score_rnas /Users/jyesselm/projects/eternabot_cpp/apps/score_rnas/score_rnas.cc )
+target_link_libraries(score_rnas all_lib)
+
+

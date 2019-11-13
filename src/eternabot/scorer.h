@@ -89,6 +89,9 @@ public:
     
     float
     score_secondary_structure(secondary_structure::PoseOP const &);
+
+    float
+    print_scores(secondary_structure::PoseOP const &);
     
 public:
     
@@ -103,6 +106,12 @@ private:
     float mean_, stdev_, total_score_ = 0.0;
 
 };
+
+typedef std::shared_ptr<Scorer> ScorerOP;
+
+//ScorerOP
+//classic_scorer();
+
 
 }
 

@@ -112,10 +112,10 @@ SequenceDesigner::design(
     std::cout << p->sequence() << std::endl;
     std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
 
-    auto score = _optimize_substructure(p, 10000);
+    auto score = _optimize_substructure(p, 1000);
     std::cout << p->sequence() << " " << score << std::endl;
     std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-    std::cout << scorer_.score_secondary_structure(p) << std::endl;
+    std::cout << scorer_.print_scores(p) << std::endl;
     exit(0);
 
 
@@ -381,7 +381,7 @@ SequenceDesigner::_optimize_substructure(
     auto current_sequence = p->sequence();
     auto next_score = 0.0f;
     //auto best_score = scorer.score_secondary_structure(p);
-    auto best_score = _bp_list_diff(p, pair_map_, pair_map_entries_);
+    auto best_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_)/5)*scorer.score_secondary_structure(p);
     auto current_score = best_score;
 
     auto best_sequence = p->sequence();
@@ -403,16 +403,16 @@ SequenceDesigner::_optimize_substructure(
         }
 
         //next_score = scorer_.score_secondary_structure(p);
-        next_score = _bp_list_diff(p, pair_map_, pair_map_entries_);
+        next_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_)/5)*scorer.score_secondary_structure(p);
 
-        if(mc_.accept(current_score, next_score)) {
+        if(mc_.accept(next_score, current_score)) {
             current_score = next_score;
         }
         else {
             current_move->undo(p);
         }
 
-        if(current_score < best_score) {
+        if(current_score > best_score) {
             best_score = current_score;
             best_sequence = p->sequence();
         }

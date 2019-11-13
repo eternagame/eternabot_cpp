@@ -28,7 +28,7 @@ public:
         params_[6] = 124.345433009;
         mean_ = 83.5007560083;
         stdev_ = 10.5290224709;
-
+        name_ = "ABasicTest";
     }
 
     ~ABasicTest() {}

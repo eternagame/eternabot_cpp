@@ -53,6 +53,13 @@ FeatureGenerator::update_features(
     features->helices = p->helices();
     features->dotplot = v_.bp_probabilities(p->sequence());
     features->fe = v_.free_energy();
+    features->multi_loops.resize(0);
+
+    for(auto const & m : p->motifs()) {
+        if(m->mtype() == util::MotifType::NWAY) {
+            features->multi_loops.push_back(m);
+        }
+    }
     
     
 }
