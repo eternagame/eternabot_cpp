@@ -19,6 +19,7 @@ type_to_str(MotifType const mtype) {
     else if (mtype == MotifType::T_T_T) { return "3X_TWOWAY"; }
     else if (mtype == MotifType::TWOWAY_SEGMENTS) { return "TWOWAY_SEGMENTS"; }
     else if (mtype == MotifType::HELIX) { return "HELIX"; }
+    else if (mtype == MotifType::SSTRAND) { return "SSTRAND"; }
     else if (mtype == MotifType::UNKNOWN) { return "UNKNOWN"; }
     else { throw "cannot indentify type "; }
 }

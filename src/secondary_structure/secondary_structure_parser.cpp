@@ -135,11 +135,39 @@ Parser::_parse_to_motifs(
         if(n->data().type == NodeType::UNPAIRED) {
             continue;
         }
-        auto m = _generate_motif(n);
-        seen_[n] = 1;
+
+        if(n->data().residues[0]->dot_bracket() != "(") {
+            continue;
+        }
+
+        auto nodes = std::vector<SSNodeOP>();
+        auto type = _walk_nodes_new(n, nodes);
+        for(auto const & n : nodes) { seen_[n] = 1; }
+
+        if(type == util::MotifType::UNKNOWN) { continue; }
+        auto s = _generate_structure_from_nodes(nodes);
+        auto m = _build_motif(s);
         if(m == nullptr) { continue; }
         motifs.push_back(m);
+        //std::cout << m->sequence() << " " << m->dot_bracket() << std::endl;
+
+        /*auto m = _generate_motif(n);
+        seen_[n] = 1;
+        if(m == nullptr) { continue; }
+        motifs.push_back(m);*/
     }
+
+    for(auto const & n : *g) {
+        if(seen_.find(n) == seen_.end()) {
+            auto s = _generate_structure_from_nodes(std::vector<SSNodeOP>{n});
+            auto m = _build_motif(s);
+            std::cout << util::type_to_str(m->mtype()) << std::endl;
+        }
+    }
+
+
+    exit(0);
+
     return motifs;
 
 }
@@ -166,6 +194,139 @@ Parser::parse_to_pose(
     return std::make_shared<Pose>(m, motifs);
 }
 
+
+StructureOP
+Parser::_generate_structure_from_nodes(
+        std::vector<SSNodeOP> const & nodes) {
+    auto res = ResidueOPs();
+    for(auto const & n : nodes) {
+        for(auto const & r : n->data().residues) {
+            res.push_back(r);
+        }
+    }
+    auto chains = ChainOPs();
+    auto current_chain_res = ResidueOPs();
+    current_chain_res.push_back(res[0]);
+    auto diff = 0;
+    for(int i = 1; i < res.size(); i++) {
+        diff = res[i]->num() - res[i-1]->num();
+        if(diff != 1) {
+            chains.push_back(std::make_shared<Chain>(current_chain_res));
+            current_chain_res = ResidueOPs();
+            current_chain_res.push_back(res[i]);
+        }
+        else {
+            current_chain_res.push_back(res[i]);
+        }
+    }
+    chains.push_back(std::make_shared<Chain>(current_chain_res));
+
+    return std::make_shared<Structure>(chains);
+
+}
+
+util::MotifType
+Parser::_walk_nodes_new(
+        SSNodeOP const & n,
+        std::vector<SSNodeOP> & nodes) {
+
+    int i = 0;
+    auto current = n;
+    auto next = SSNodeOP(nullptr);
+
+    auto current_bp_res = ResidueOPs(2);
+    auto next_bp_res = ResidueOPs(2);
+    while(current != nullptr) {
+        nodes.push_back(current);
+        if(current->connections()[1] != nullptr) {
+            next = current->connections()[1]->partner(current->index());
+        }
+        else {
+            break;
+        }
+
+        /*std::cout << "CURRENT: " << current->data().residues[0]->num() << " NEXT: " << next->data().residues[0]->num() <<  " LIST: ";
+        for(auto const & n: nodes) {
+            std::cout << n->data().residues[0]->num() << " ";
+        }
+        std::cout << std::endl;
+        */
+
+        if(current->data().type == NodeType::PAIRED && next->data().type == NodeType::PAIRED) {
+            _get_basepair_res(current, current_bp_res);
+            _get_basepair_res(next, next_bp_res);
+
+            // check if base pair step
+            if (current_bp_res[0]->num() == next_bp_res[0]->num() - 1 &&
+                current_bp_res[1]->num() == next_bp_res[1]->num() + 1) {
+                nodes.push_back(next);
+                nodes.push_back(next->connections()[2]->partner(next->index()));
+                nodes.push_back(current->connections()[2]->partner(current->index()));
+                return util::MotifType::HELIX;
+            }
+
+            nodes.push_back(next);
+            current = next;
+            next = next->connections()[2]->partner(next->index());
+
+        }
+
+        else if(current->data().type == NodeType::PAIRED && next->data().type == NodeType::UNPAIRED) {
+            if(std::find(nodes.begin(), nodes.end(), next) != nodes.end()) {
+                return util::MotifType::UNKNOWN;
+            }
+        }
+
+        else if(current->data().type == NodeType::UNPAIRED && next->data().type == NodeType::PAIRED) {
+            // come full circle
+            if(_is_a_bp(nodes[0], next)) {
+                nodes.push_back(next);
+                if(nodes.size() == 3)      { return util::MotifType::HAIRPIN; }
+                else if(nodes.size() == 5) { return util::MotifType::TWOWAY; }
+                else                       { return util::MotifType::NWAY; }
+            }
+
+            if(std::find(nodes.begin(), nodes.end(), next) != nodes.end()) {
+                return util::MotifType::UNKNOWN;
+            }
+
+            nodes.push_back(next);
+            current = next;
+            next = next->connections()[2]->partner(next->index());
+
+        }
+
+
+        current = next;
+
+    }
+    return util::MotifType::UNKNOWN;
+}
+
+void
+Parser::_get_basepair_res(
+        SSNodeOP n,
+        ResidueOPs & bp_res) {
+    if(n->data().type == NodeType::UNPAIRED) {
+        throw secondary_structure::Exception("cannot get baepair res it is not a basepair");
+    }
+    auto partner =n->connections()[2]->partner(n->index());
+    bp_res[0] = n->data().residues[0];
+    bp_res[1] = partner->data().residues[0];
+
+}
+
+
+bool
+Parser::_is_a_bp(
+        SSNodeOP n1,
+        SSNodeOP n2) {
+    if(n1->connections()[2] == nullptr) { return false; }
+    if(n1->connections()[2]->partner(n1->index()) == n2) { return true;}
+    return false;
+}
+
+
     
 SSNodeOP
 Parser::_walk_nodes(
@@ -184,9 +345,7 @@ Parser::_walk_nodes(
         for(auto & r : current->data().residues) {
             res.push_back(r);
         }
-        /*std::copy(current->data().residues.begin(),
-                  current->data().residues.end(),
-                  std::inserter(res, res.end()));*/
+
         last_node = current;
         if(current->connections()[1] != nullptr) {
             current = current->connections()[1]->partner(current->index());
@@ -268,18 +427,23 @@ Parser::_build_motif(
     }
     
     auto m = std::make_shared<Motif>(struc, bps, ends);
-    auto end_ids = Strings();
-    for(auto const & end : m->ends()) {
-        auto end_id = assign_end_id(m, end);
-        end_ids.push_back(end_id);
+    if(ends.size() > 0) {
+        auto end_ids = Strings();
+        for (auto const & end : m->ends()) {
+            auto end_id = assign_end_id(m, end);
+            end_ids.push_back(end_id);
+        }
+        m->end_ids(end_ids);
     }
-    m->end_ids(end_ids);
     
     if(m->residues().size() == 4) {
         m->mtype(util::MotifType::HELIX);
     }
     else if(m->chains().size() == 2) {
         m->mtype(util::MotifType::TWOWAY);
+    }
+    else if(m->chains().size() == 1 && m->basepairs().size() == 0) {
+        m->mtype(util::MotifType::SSTRAND);
     }
     else if(m->chains().size() == 1) {
         m->mtype(util::MotifType::HAIRPIN);
