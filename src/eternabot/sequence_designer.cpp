@@ -131,11 +131,11 @@ SequenceDesigner::design(
     //std::cout << p->sequence() << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
 
-    auto score = _optimize_substructure(p, 1000);
+    auto score = _optimize_substructure(p, 10000);
     //std::cout << p->sequence() << " " << score << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
     //std::cout << scorer_.print_scores(p) << std::endl;
-    scorer_.score_secondary_structure(p);
+    score = scorer_.score_secondary_structure(p);
     auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
 
     results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), score, bp_diff_score));

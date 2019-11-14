@@ -161,12 +161,9 @@ Parser::_parse_to_motifs(
         if(seen_.find(n) == seen_.end()) {
             auto s = _generate_structure_from_nodes(std::vector<SSNodeOP>{n});
             auto m = _build_motif(s);
-            std::cout << util::type_to_str(m->mtype()) << std::endl;
+            motifs.push_back(m);
         }
     }
-
-
-    exit(0);
 
     return motifs;
 
