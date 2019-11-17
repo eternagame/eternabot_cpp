@@ -28,7 +28,7 @@ class SequenceDesigner(object):
         lines.pop()
         for l in lines:
             spl = l.split()
-            sols.append(SequenceDesignerData(spl[1],float(spl[0])))
+            sols.append(SequenceDesignerData(spl[2],float(spl[0])))
         return sols
 
     def design(self, structure, sequence, solutions=1, steps=100):

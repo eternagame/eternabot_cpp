@@ -263,6 +263,11 @@ Parser::_walk_nodes_new(
             }
 
             nodes.push_back(next);
+
+            if(_is_a_bp(nodes[0], next)) {
+                return util::MotifType::NWAY;
+            }
+
             current = next;
             next = next->connections()[2]->partner(next->index());
 

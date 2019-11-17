@@ -16,6 +16,7 @@ Pose::_build_helices() {
     auto steps = MotifOPs();
     for (auto const & m : motifs_) {
         if (m->mtype() != util::MotifType::HELIX) { continue; }
+        if(m->ends().size() == 0) { continue; }
         steps.push_back(m);
     }
 

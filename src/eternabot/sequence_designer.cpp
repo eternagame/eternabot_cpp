@@ -25,7 +25,6 @@ SequenceDesigner::SequenceDesigner():
     parameters_.biased_gc_caps = true;
     v_ = vienna::Vienna();
 
-
     possible_bps_ = std::vector<Strings>({{"A", "U"}, {"U", "A"}, {"G", "C"}, {"C", "G"}});
     possible_rt_bps_ = std::vector<secondary_structure::ResTypes>{
             {secondary_structure::ResType::ADE, secondary_structure::ResType::URA},
@@ -122,7 +121,7 @@ SequenceDesigner::design(
         auto current_score = scorer_.score_secondary_structure(p);
         auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
         results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
-        std::cout << scorer_.print_scores(p) << std::endl;
+        //std::cout << scorer_.print_scores(p) << std::endl;
 
         return results_;
     }
@@ -131,7 +130,7 @@ SequenceDesigner::design(
     //std::cout << p->sequence() << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
 
-    auto score = _optimize_substructure(p, 10000);
+    auto score = _optimize_substructure(p, 1000);
     //std::cout << p->sequence() << " " << score << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
     //std::cout << scorer_.print_scores(p) << std::endl;

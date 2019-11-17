@@ -32,7 +32,7 @@ void
 ScoreRNAsApp::run() {
     base::init_logging();
     auto scorer = eternabot::Scorer(
-            Strings{"ModifiedBerexTest"},
+            Strings{"BerexTest"},
             Floats{1});
 
     auto out = std::ofstream();

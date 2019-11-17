@@ -58,7 +58,6 @@ EternabotApp::run() {
 
     auto parser = secondary_structure::Parser();
     for(int i = 0; i < parameters_.n; i++) {
-        std::cout << i << std::endl;
         auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);
         auto results = designer.design(p);
         p->replace_sequence(results[0]->sequence);
