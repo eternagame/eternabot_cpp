@@ -16,10 +16,9 @@ class SequenceDesigner(object):
             raise IOError("cannot find eternabot exe")
 
     def __call_cpp_eternabot(self, sequence, structure, steps, solutions):
-        cmd = self.__exe_path + " -seq {seq} -ss \"{ss}\" -steps {s} -n {sols}".format(
-            seq=sequence, ss=structure, s=steps, sols=solutions)
-        output = subprocess.check_output(cmd, shell=True)
-        return output
+        cmd = [self.__exe_path, '-seq', sequence, '-ss', structure, '-steps', str(steps), '-n', str(solutions)]
+        output = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return output.stdout
 
     def __parse_cpp_output(self, output):
         lines = output.decode().split("\n")
