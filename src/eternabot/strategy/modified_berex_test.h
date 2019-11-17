@@ -50,7 +50,7 @@ public:
             score -= abs(float(features->c_count) / float(features->length) - params_[4]) * params_[5];
         }
 
-        float weight = exp(-((features->fe - 100)*(features->fe - 100))/5000)/(sqrt(2*3.14*1))*2.5;
+        float weight = exp(-((features->length - 100)*(features->length - 100))/5000)/(sqrt(2*3.14*1))*2.5;
         if     (features->fe < params_[6]) {
            score -= abs(features->fe - params_[6]) * params_[8] * weight;
         }
