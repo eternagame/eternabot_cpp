@@ -23,7 +23,7 @@ class SequenceDesigner(object):
     def __parse_cpp_output(self, output):
         lines = output.decode().split("\n")
         sols = []
-
+        
         lines.pop()
         for l in lines:
             spl = l.split()

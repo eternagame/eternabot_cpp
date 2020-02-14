@@ -6,6 +6,7 @@
 #define RNAMAKE_NEW_SCORE_RNAS_H
 
 #include <base/application.hpp>
+#include <eternabot/scorer.h>
 
 class ScoreRNAsApp : base::Application {
 public:
@@ -28,12 +29,28 @@ public:
     run();
 
 private:
+    void
+    _setup_pairmap(
+            secondary_structure::PoseOP);
+
+    float
+    _bp_list_diff(
+            secondary_structure::PoseOP,
+            std::vector<std::vector<int>> const &,
+            size_t,
+            eternabot::FeaturesOP);
+
+private:
     struct Parameters {
         String csv, out_file;
+        bool test_load;
     };
 
 private:
     Parameters parameters_;
+
+    std::vector<std::vector<int>> pair_map_;
+    size_t pair_map_entries_;
 
 };
 

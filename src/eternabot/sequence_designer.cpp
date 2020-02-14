@@ -120,8 +120,8 @@ SequenceDesigner::design(
     if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
         auto current_score = scorer_.score_secondary_structure(p);
         auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
-        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
         //std::cout << scorer_.print_scores(p) << std::endl;
+        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
 
         return results_;
     }
@@ -133,9 +133,11 @@ SequenceDesigner::design(
     auto score = _optimize_substructure(p, 1000);
     //std::cout << p->sequence() << " " << score << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-    //std::cout << scorer_.print_scores(p) << std::endl;
     score = scorer_.score_secondary_structure(p);
+    //std::cout << scorer_.print_scores(p) << std::endl;
     auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
+
+    if(score > 100) { score = 100; }
 
     results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), score, bp_diff_score));
     return results_;
@@ -146,7 +148,7 @@ SequenceDesigner::design(
 
 
 
-    for(auto const & m : p->motifs()) {
+    /*for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
         motifs.push_back(m);
     }
@@ -191,7 +193,7 @@ SequenceDesigner::design(
         std::cout << current_children.size() << std::endl;
     }
 
-    exit(0);
+    exit(0);*/
 
 
 
