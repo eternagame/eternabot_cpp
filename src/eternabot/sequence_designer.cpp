@@ -25,12 +25,14 @@ SequenceDesigner::SequenceDesigner():
     parameters_.biased_gc_caps = true;
     v_ = vienna::Vienna();
 
-    possible_bps_ = std::vector<Strings>({{"A", "U"}, {"U", "A"}, {"G", "C"}, {"C", "G"}});
+    possible_bps_ = std::vector<Strings>({{"A", "U"}, {"U", "A"}, {"G", "C"}, {"C", "G"}, {"G", "U"}, {"U", "G"}});
     possible_rt_bps_ = std::vector<secondary_structure::ResTypes>{
             {secondary_structure::ResType::A, secondary_structure::ResType::U},
             {secondary_structure::ResType::U, secondary_structure::ResType::A},
             {secondary_structure::ResType::C, secondary_structure::ResType::G},
-            {secondary_structure::ResType::G, secondary_structure::ResType::C}};
+            {secondary_structure::ResType::G, secondary_structure::ResType::C},
+            {secondary_structure::ResType::U, secondary_structure::ResType::G},
+            {secondary_structure::ResType::G, secondary_structure::ResType::U}};
 
     possible_res_types_ = std::vector<secondary_structure::ResType> {
             secondary_structure::ResType::A,
@@ -381,7 +383,12 @@ SequenceDesigner::_get_random_res_type_pair_gc_cap(
 void
 SequenceDesigner::_get_random_res_type_pair(
         secondary_structure::ResTypes & pair) {
-    pair = possible_rt_bps_[rng_.randrange(possible_rt_bps_.size())];
+    if(rng_.randrange(1000) > 200) {
+        pair = possible_rt_bps_[rng_.randrange(4)];
+    }
+    else {
+        pair = possible_rt_bps_[rng_.randrange(6)];
+    }
 }
 
 

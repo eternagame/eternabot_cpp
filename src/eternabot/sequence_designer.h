@@ -105,7 +105,13 @@ public:
         while(true) {
             count += 1;
             if(count > 1000) { break; }
-            current_res_types_ = possible_rt_types_[rng_.randrange((int) possible_rt_types_.size())];
+            if(rng_.randrange(1000) > 200) {
+                current_res_types_ = possible_rt_types_[rng_.randrange(4)];
+            }
+            else {
+                current_res_types_ = possible_rt_types_[rng_.randrange(6)];
+
+            }
             //std::cout << current_res_types_[0] << " " << current_res_types[1];
             if(!secondary_structure::does_restype_satisfy_constraint(current_res_types_[0], org_res_type_1) ||
                !secondary_structure::does_restype_satisfy_constraint(current_res_types_[1], org_res_type_2)) {
