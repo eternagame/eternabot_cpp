@@ -34,14 +34,14 @@ enum class ResType {
     C, // C
     G, // G
     U, // U
-    W, // "Weak" A or T
+    W, // "Weak" A or U
     S, // "Strong" C or G
     M, // "aMino" A or C
-    K, // "Keto" G or T
+    K, // "Keto" G or U
     R, // "puRine", A or G
-    Y, // "pYrimidine, C or T
-    B, // not A, C G or T
-    D, // not C, A G or T
+    Y, // "pYrimidine, C or U
+    B, // not A, C G or U
+    D, // not C, A G or U
     H, // not G, A C or G
     V, // not U, A C or G
     N  // A, C, G or U
