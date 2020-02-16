@@ -49,6 +49,7 @@ EternabotApp::run() {
     base::init_logging();
 
     auto designer = eternabot::SequenceDesigner();
+    auto v = vienna::Vienna();
     designer.set_option_value("steps", parameters_.steps);
     designer.setup();
 
@@ -61,7 +62,8 @@ EternabotApp::run() {
         auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);;
         auto results = designer.design(p);
         p->replace_sequence(results[0]->sequence);
-        std::cout << results[0]->score << " " << results[0]->bp_diff_score << " " <<  results[0]->sequence << " " << p->dot_bracket() << std::endl;
+        v.fold(results[0]->sequence);
+        std::cout << results[0]->score << " " << results[0]->bp_diff_score << " " <<  results[0]->sequence << " " << p->dot_bracket() << " " << v.get_structure() << std::endl;
         out << i << "," << p->dot_bracket() << "," << results[0]->score << "," << results[0]->bp_diff_score << ",";
         out << results[0]->sequence << ",";
         out << secondary_structure::find_longest_gc_helix_stretch(p) << std::endl;

@@ -72,10 +72,12 @@ public:
 class MutateBPMove : public MonteCarloMove {
 public:
     MutateBPMove(
-            secondary_structure::BasepairOPs designable_bps,
-            std::vector<secondary_structure::ResTypes> possible_rt_types):
+            secondary_structure::BasepairOPs const & designable_bps,
+            std::vector<secondary_structure::ResTypes> const & possible_rt_types,
+            std::map<int, secondary_structure::ResType> const & res_type_constraints):
             designable_bps_(designable_bps),
             possible_rt_types_(possible_rt_types),
+            res_type_constraints_(res_type_constraints),
             rng_(util::RandomNumberGenerator()) {
         last_res_types_ = secondary_structure::ResTypes(2);
     }
@@ -95,16 +97,32 @@ public:
         current_ = designable_bps_[rng_.randrange((int)designable_bps_.size())];
         last_res_types_[0] = current_->res1()->res_type();
         last_res_types_[1] = current_->res2()->res_type();
+        int count = 0;
+
+        auto org_res_type_1 = res_type_constraints_[current_->res1()->num()];
+        auto org_res_type_2 = res_type_constraints_[current_->res2()->num()];
 
         while(true) {
+            count += 1;
+            if(count > 1000) { break; }
             current_res_types_ = possible_rt_types_[rng_.randrange((int) possible_rt_types_.size())];
+            //std::cout << current_res_types_[0] << " " << current_res_types[1];
+            if(!secondary_structure::does_restype_satisfy_constraint(current_res_types_[0], org_res_type_1) ||
+               !secondary_structure::does_restype_satisfy_constraint(current_res_types_[1], org_res_type_2)) {
+                continue;
+            }
+
+            // got the same pair again, should not count that as a successful move - JDY
+            if(current_res_types_[0] == current_->res1()->res_type()) { return 0;}
+
             current_->res1()->res_type(current_res_types_[0]);
             current_->res2()->res_type(current_res_types_[1]);
-            if(current_res_types_[0] != last_res_types_[0]) { break; }
+
+            return 1;
 
         }
 
-        return 1;
+        return 0;
     }
 
     void
@@ -118,6 +136,7 @@ private:
     secondary_structure::BasepairOPs designable_bps_;
     secondary_structure::BasepairOP current_;
     std::vector<secondary_structure::ResTypes> possible_rt_types_;
+    std::map<int, secondary_structure::ResType> res_type_constraints_;
     util::RandomNumberGenerator rng_;
     secondary_structure::ResTypes last_res_types_, current_res_types_;
 
@@ -126,42 +145,51 @@ private:
 class MutateUnpairedResMove : public MonteCarloMove {
 public:
     MutateUnpairedResMove(
-            secondary_structure::ResidueOPs designable_unpaired_res):
+            secondary_structure::ResidueOPs designable_unpaired_res,
+            std::map<int, secondary_structure::ResType> const & res_type_constraints):
             designable_unpaired_res_(designable_unpaired_res) {
         possible_res_types_ = secondary_structure::ResTypes {
-            secondary_structure::ResType::ADE,
-            secondary_structure::ResType::CYT,
-            secondary_structure::ResType::GUA,
-            secondary_structure::ResType::URA
+            secondary_structure::ResType::A,
+            secondary_structure::ResType::C,
+            secondary_structure::ResType::G,
+            secondary_structure::ResType::U
         };
 
     }
 
-    ~MutateUnpairedResMove() = default;
+    ~MutateUnpairedResMove() override = default;
 
     MonteCarloMove *
-    clone() const { return new MutateUnpairedResMove(*this); }
+    clone() const override { return new MutateUnpairedResMove(*this); }
 
 public:
     int
     move(
-            secondary_structure::PoseOP p) {
+            secondary_structure::PoseOP p) override {
 
-        if(designable_unpaired_res_.size() == 0) { return 0; }
-
+        if(designable_unpaired_res_.empty()) { return 0; }
         current_ = designable_unpaired_res_[rng_.randrange((int)designable_unpaired_res_.size())];
+
+        auto org_res_type = res_type_constraints_[current_->num()];
         last_res_type_ = current_->res_type();
+        auto count = 0;
         while(true) {
+            count += 1;
+            if(count > 1000) { return 0; }
             current_res_type_ = possible_res_types_[rng_.randrange((int)possible_res_types_.size())];
+            if(!secondary_structure::does_restype_satisfy_constraint(current_res_type_, org_res_type)) {
+                continue;
+            }
+            if(current_res_type_ == last_res_type_) { return 0; }
             current_->res_type(current_res_type_);
-            if(current_res_type_ != last_res_type_) { break; }
+            break;
         }
         return 1;
     }
 
     void
     undo(
-            secondary_structure::PoseOP p) {
+            secondary_structure::PoseOP p) override {
         current_->res_type(last_res_type_);
 
     }
@@ -171,6 +199,7 @@ private:
     secondary_structure::ResidueOPs designable_unpaired_res_;
     secondary_structure::ResTypes possible_res_types_;
     secondary_structure::ResType last_res_type_, current_res_type_;
+    std::map<int, secondary_structure::ResType> res_type_constraints_;
     util::RandomNumberGenerator rng_;
 
 };
@@ -275,6 +304,11 @@ private: // new and possibly badly made functions
             FeaturesOP);
 
 private:
+    bool
+    _assign_new_residue_restype(
+            secondary_structure::ResidueOP);
+
+private:
     struct Parameters {
         bool biased_gc_caps;
     };
@@ -285,9 +319,11 @@ private:
     secondary_structure::ResidueOPs designable_unpaired_res_;
     std::vector<Strings> possible_bps_;
     std::vector<secondary_structure::ResTypes> possible_rt_bps_;
+    std::vector<secondary_structure::ResType> possible_res_types_;
     base::Options options_;
     util::RandomNumberGenerator rng_;
     util::MonteCarlo mc_;
+    std::map<int, secondary_structure::ResType> res_type_constraints_;
     secondary_structure::BasepairOPs designable_bps_;
     Scorer scorer_;
     SequenceDesignerResultOPs results_;

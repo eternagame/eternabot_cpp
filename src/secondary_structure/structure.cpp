@@ -31,7 +31,7 @@ Structure::_setup_chains(
     ResidueOPs res;
     int count = 1;
     String chain_ids = "ABCDEFGHIJKLMNOPQRSTUVWXZ";
-    auto valid_seq = String("AGUCTN&+-");
+    auto valid_seq = String("AGUCTNWSMKRYBDHV&+-");
     auto valid_ss = String("[{(.)}]");
     int i = -1, ci = 0;
     for(auto & s : sequence) {

@@ -101,7 +101,7 @@ find_longest_gc_helix_stretch_in_motif(
     int count = 0;
     int longest = 0;
     for(auto const & r: m->chains()[0]->residues()) {
-        if(r->res_type() == ResType::GUA || r->res_type() == ResType::CYT) {
+        if(r->res_type() == ResType::G || r->res_type() == ResType::C) {
             count += 1;
         }
         else {
@@ -118,10 +118,10 @@ find_longest_gc_helix_stretch_in_motif(
 ResType
 get_complement_res_type(
         ResType r_type) {
-    if(r_type == ResType::ADE) { return ResType::URA; }
-    else if(r_type == ResType::CYT) { return ResType::GUA; }
-    else if(r_type == ResType::GUA) { return ResType::CYT; }
-    else if(r_type == ResType::URA) { return ResType::ADE; }
+    if(r_type == ResType::A) { return ResType::U; }
+    else if(r_type == ResType::C) { return ResType::G; }
+    else if(r_type == ResType::G) { return ResType::C; }
+    else if(r_type == ResType::U) { return ResType::A; }
     else { throw secondary_structure::Exception("cannot get complement res type"); }
 
 }

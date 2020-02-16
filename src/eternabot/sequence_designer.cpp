@@ -27,10 +27,17 @@ SequenceDesigner::SequenceDesigner():
 
     possible_bps_ = std::vector<Strings>({{"A", "U"}, {"U", "A"}, {"G", "C"}, {"C", "G"}});
     possible_rt_bps_ = std::vector<secondary_structure::ResTypes>{
-            {secondary_structure::ResType::ADE, secondary_structure::ResType::URA},
-            {secondary_structure::ResType::URA, secondary_structure::ResType::ADE},
-            {secondary_structure::ResType::CYT, secondary_structure::ResType::GUA},
-            {secondary_structure::ResType::GUA, secondary_structure::ResType::CYT}};
+            {secondary_structure::ResType::A, secondary_structure::ResType::U},
+            {secondary_structure::ResType::U, secondary_structure::ResType::A},
+            {secondary_structure::ResType::C, secondary_structure::ResType::G},
+            {secondary_structure::ResType::G, secondary_structure::ResType::C}};
+
+    possible_res_types_ = std::vector<secondary_structure::ResType> {
+            secondary_structure::ResType::A,
+            secondary_structure::ResType::C,
+            secondary_structure::ResType::G,
+            secondary_structure::ResType::U
+    };
 
 
     // generate constraints
@@ -74,7 +81,7 @@ SequenceDesigner::update_var_options() {
 // main functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    
+
 SequenceDesignerResultOPs const &
 SequenceDesigner::design(
         secondary_structure::PoseOP const & p) {
@@ -91,18 +98,24 @@ SequenceDesigner::design(
     pair_map_entries_ = p->residues().size()*p->residues().size();
     auto motifs = p->helices();
 
+    res_type_constraints_ = std::map<int, secondary_structure::ResType>();
+    for(auto const & r : p->residues()) {
+        res_type_constraints_[r->num()] = r->res_type();
+    }
+
     _find_designable_bps(p);       // find all basepairs with N-N residues
     for(auto const & r : p->residues()) {
-        if(r->res_type() == secondary_structure::ResType::NONE) {
+        if ( is_restype_a_ambiguous_code(r->res_type())) {
             designable_res_.push_back(r);
             auto bps = p->get_basepair(r->uuid());
             if(bps.size() == 0) {
                 designable_unpaired_res_.push_back(r);
             }
 
-            r->res_type(secondary_structure::ResType::ADE);
+            _assign_new_residue_restype(r);
         }
     }
+
     scorer_.setup(p);
 
     for(auto const & h : motifs) {
@@ -115,12 +128,10 @@ SequenceDesigner::design(
         motifs.push_back(m);
     }
 
-
     // nothing to design! return just the score
     if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
         auto current_score = scorer_.score_secondary_structure(p);
         auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
-        //std::cout << scorer_.print_scores(p) << std::endl;
         results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
 
         return results_;
@@ -129,8 +140,8 @@ SequenceDesigner::design(
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
     //std::cout << p->sequence() << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-
     auto score = _optimize_substructure(p, 1000);
+
     //std::cout << p->sequence() << " " << score << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
     score = scorer_.score_secondary_structure(p);
@@ -143,10 +154,6 @@ SequenceDesigner::design(
     return results_;
 
     exit(0);
-
-
-
-
 
     /*for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
@@ -195,9 +202,6 @@ SequenceDesigner::design(
 
     exit(0);*/
 
-
-
-
     //results_.push_back(std::make_shared<SequenceDesignerResult>(best_sequence, best_score));
     return results_;
     
@@ -212,14 +216,12 @@ void
 SequenceDesigner::_find_designable_bps(
         secondary_structure::PoseOP p) {
     for(auto const & bp : p->basepairs()) {
-        if(bp->res1()->res_type() == secondary_structure::ResType::NONE &&
-           bp->res2()->res_type() == secondary_structure::ResType::NONE ) {
+        if(is_restype_a_ambiguous_code(bp->res1()->res_type()) || is_restype_a_ambiguous_code(bp->res2()->res_type()) ) {
             designable_bps_.push_back(bp);
         }
     }
 
 }
-
 
 bool
 SequenceDesigner::_new_sequence_violations(
@@ -266,39 +268,60 @@ SequenceDesigner::_set_initial_helix_sequence(
     auto c_violations = seq_constraints_.violations(h);
     auto n_violations = Ints(c_violations);
     auto iter = 0;
+    auto bp_iter = 0;
     while(true) {
         i = 0;
         for(auto & bp : h->basepairs()) {
-            // can design both sides of the helix
-            if(designable_1[i] && designable_2[i]) {
-                if ((i == 0 || i == n_bps - 1) && parameters_.biased_gc_caps) {
-                    _get_random_res_type_pair_gc_cap(res_type_bp);
-                } else {
-                    _get_random_res_type_pair(res_type_bp);
+            bp_iter = 0;
+            auto org_res_type_1 = res_type_constraints_[bp->res1()->num()];
+            auto org_res_type_2 = res_type_constraints_[bp->res2()->num()];
+            while(true) {
+                bp_iter += 1;
+                if(bp_iter > 100000) {
+                    LOG_ERROR << "cannot find a basepair that satisfies constraints: " +
+                    secondary_structure::convert_res_type_to_str(org_res_type_1) + " " +
+                    secondary_structure::convert_res_type_to_str(org_res_type_2);
+                    exit(0);
                 }
-            }
-            // cannot design either side
-            else if(designable_1[i] == 0 && designable_2[i] == 0) {
-                res_type_bp[0] = bp->res1()->res_type();
-                res_type_bp[1] = bp->res2()->res_type();
-            }
-            // cannot design first residue
-            else if(designable_1[i] == 0) {
-                res_type_bp[0] = bp->res1()->res_type();
-                res_type_bp[1] = secondary_structure::get_complement_res_type(bp->res1()->res_type());
-            }
-            // cannot design second residue
-            else if(designable_2[i] == 0) {
-                res_type_bp[0] = secondary_structure::get_complement_res_type(bp->res2()->res_type());
-                res_type_bp[1] = bp->res2()->res_type();
-            }
+                // can design both sides of the helix
+                if (designable_1[i] && designable_2[i]) {
+                    if ((i == 0 || i == n_bps - 1) && parameters_.biased_gc_caps) {
+                        _get_random_res_type_pair_gc_cap(res_type_bp);
+                    } else {
+                        _get_random_res_type_pair(res_type_bp);
+                    }
+                }
+                    // cannot design either side
+                else if (designable_1[i] == 0 && designable_2[i] == 0) {
+                    res_type_bp[0] = bp->res1()->res_type();
+                    res_type_bp[1] = bp->res2()->res_type();
+                }
+                    // cannot design first residue
+                else if (designable_1[i] == 0) {
+                    res_type_bp[0] = bp->res1()->res_type();
+                    res_type_bp[1] = secondary_structure::get_complement_res_type(bp->res1()->res_type());
+                }
+                    // cannot design second residue
+                else if (designable_2[i] == 0) {
+                    res_type_bp[0] = secondary_structure::get_complement_res_type(bp->res2()->res_type());
+                    res_type_bp[1] = bp->res2()->res_type();
+                }
 
-            res_types_1[i] = res_type_bp[0];
-            res_types_2[i] = res_type_bp[1];
 
-            bp->res1()->res_type(res_type_bp[0]);
-            bp->res2()->res_type(res_type_bp[1]);
+                if(!secondary_structure::does_restype_satisfy_constraint(res_type_bp[0], org_res_type_1) ||
+                   !secondary_structure::does_restype_satisfy_constraint(res_type_bp[1], org_res_type_2)) {
+                    continue;
+                }
 
+                res_types_1[i] = res_type_bp[0];
+                res_types_2[i] = res_type_bp[1];
+
+                bp->res1()->res_type(res_type_bp[0]);
+                bp->res2()->res_type(res_type_bp[1]);
+
+                break;
+
+            }
             i += 1;
         }
 
@@ -331,26 +354,26 @@ SequenceDesigner::_get_random_res_type_pair_gc_cap(
     if(rng_.randrange(1000) > 200) {
         // selecting GC
         if(rng_.randrange(1000) > 500) {
-            pair[0] = secondary_structure::ResType::GUA;
-            pair[1] = secondary_structure::ResType::CYT;
+            pair[0] = secondary_structure::ResType::G;
+            pair[1] = secondary_structure::ResType::C;
         }
         // selecting CG
         else {
-            pair[0] = secondary_structure::ResType::CYT;
-            pair[1] = secondary_structure::ResType::GUA;
+            pair[0] = secondary_structure::ResType::C;
+            pair[1] = secondary_structure::ResType::G;
         }
     }
 
     else {
         // selecting AU
         if(rng_.randrange(1000) > 500) {
-            pair[0] = secondary_structure::ResType::ADE;
-            pair[1] = secondary_structure::ResType::URA;
+            pair[0] = secondary_structure::ResType::A;
+            pair[1] = secondary_structure::ResType::U;
         }
         // selecting UA
         else {
-            pair[0] = secondary_structure::ResType::URA;
-            pair[1] = secondary_structure::ResType::ADE;
+            pair[0] = secondary_structure::ResType::U;
+            pair[1] = secondary_structure::ResType::A;
         }
     }
 }
@@ -384,8 +407,8 @@ SequenceDesigner::_optimize_substructure(
 
     auto current_move = MonteCarloMoveOP(nullptr);
     auto moves = MonteCarloMoveOPs(2);
-    moves[0] = std::make_shared<MutateBPMove>(current_designable_bps, possible_rt_bps_);
-    moves[1] = std::make_shared<MutateUnpairedResMove>(current_designable_unpaired_res);
+    moves[0] = std::make_shared<MutateBPMove>(current_designable_bps, possible_rt_bps_, res_type_constraints_);
+    moves[1] = std::make_shared<MutateUnpairedResMove>(current_designable_unpaired_res, res_type_constraints_);
 
     auto current_sequence = p->sequence();
     auto next_score = 0.0f;
@@ -405,7 +428,6 @@ SequenceDesigner::_optimize_substructure(
         else {
             current_move = moves[1];
         }
-
         // move didn't do anything, try again
         if(current_move->move(p) == 0) {
             i--;
@@ -453,6 +475,26 @@ SequenceDesigner::_bp_list_diff(
     return score;
 
 }
+
+bool
+SequenceDesigner::_assign_new_residue_restype(
+        secondary_structure::ResidueOP r) {
+    auto org_res_type = res_type_constraints_[r->num()];
+    auto count = 0;
+    while(1) {
+        auto res_type = possible_res_types_[rng_.randrange(possible_res_types_.size())];
+        if(secondary_structure::does_restype_satisfy_constraint(res_type, org_res_type)) {
+            r->res_type(res_type);
+            return true;
+        }
+
+        count += 1;
+        if(count > 1000) { break; }
+    }
+
+    return false;
+}
+
 
 
 }

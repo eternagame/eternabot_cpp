@@ -28,8 +28,23 @@ public:
             std::runtime_error(message) {}
 };
 
+//https://en.wikipedia.org/wiki/Nucleic_acid_notation
 enum class ResType {
-    ADE, CYT, GUA, URA, NONE
+    A, // A
+    C, // C
+    G, // G
+    U, // U
+    W, // "Weak" A or T
+    S, // "Strong" C or G
+    M, // "aMino" A or C
+    K, // "Keto" G or T
+    R, // "puRine", A or G
+    Y, // "pYrimidine, C or T
+    B, // not A, C G or T
+    D, // not C, A G or T
+    H, // not G, A C or G
+    V, // not U, A C or G
+    N  // A, C, G or U
 };
 
 typedef std::vector<ResType> ResTypes;
@@ -41,6 +56,55 @@ convert_res_name_to_type(
 
 String
 convert_res_type_to_str(
+        ResType);
+
+bool
+does_restype_satisfy_constraint(
+        ResType,
+        ResType);
+
+bool
+is_restype_a_weak(
+        ResType);
+
+bool
+is_restype_a_strong(
+        ResType);
+
+bool
+is_restype_a_amino(
+        ResType);
+
+bool
+is_restype_a_keto(
+        ResType);
+
+bool
+is_restype_a_purine(
+        ResType);
+
+bool
+is_restype_a_pyrimidine(
+        ResType);
+
+bool
+is_restype_not_A(
+        ResType);
+
+bool
+is_restype_not_C(
+        ResType);
+
+bool
+is_restype_not_G(
+        ResType);
+
+bool
+is_restype_not_U(
+        ResType);
+
+bool
+is_restype_a_ambiguous_code(
         ResType);
 
 

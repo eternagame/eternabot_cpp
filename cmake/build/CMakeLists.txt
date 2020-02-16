@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(rnamake_new)
 
+SET(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+
 set(CMAKE_BUILD_TYPE Release)
 include(/Users/josephyesselman/projects/eternabot_cpp/cmake/build/compiler.cmake)
 
@@ -133,8 +136,6 @@ target_link_libraries(all_lib eternabot_lib )
 add_executable(eternabot /Users/josephyesselman/projects/eternabot_cpp/apps/eternabot/eternabot.cpp )
 target_link_libraries(eternabot all_lib)
 
-
 add_executable(score_rnas /Users/josephyesselman/projects/eternabot_cpp/apps/score_rnas/score_rnas.cc )
 target_link_libraries(score_rnas all_lib)
-
 
