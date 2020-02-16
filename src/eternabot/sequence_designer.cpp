@@ -353,7 +353,8 @@ SequenceDesigner::_get_random_res_type_pair_gc_cap(
         secondary_structure::ResTypes & pair) {
     // biased base pair selection for caped ends, 80% chance to be GC/CG over AU/UA
     // will do GCs
-    if(rng_.randrange(1000) > 200) {
+    auto rand = rng_.randrange(1000);
+    if(rand > 200) {
         // selecting GC
         if(rng_.randrange(1000) > 500) {
             pair[0] = secondary_structure::ResType::G;
@@ -366,7 +367,7 @@ SequenceDesigner::_get_random_res_type_pair_gc_cap(
         }
     }
 
-    else {
+    else if(rand > 50){
         // selecting AU
         if(rng_.randrange(1000) > 500) {
             pair[0] = secondary_structure::ResType::A;
@@ -377,6 +378,19 @@ SequenceDesigner::_get_random_res_type_pair_gc_cap(
             pair[0] = secondary_structure::ResType::U;
             pair[1] = secondary_structure::ResType::A;
         }
+    }
+    else {
+        // selecting AU
+        if(rng_.randrange(1000) > 500) {
+            pair[0] = secondary_structure::ResType::G;
+            pair[1] = secondary_structure::ResType::U;
+        }
+        // selecting UA
+        else {
+            pair[0] = secondary_structure::ResType::U;
+            pair[1] = secondary_structure::ResType::G;
+        }
+
     }
 }
 
