@@ -9,7 +9,7 @@ class SequenceDesignerData(object):
     def __init__(self, sequence, score, target_structure, folded_structure):
         self.sequence, self.score = sequence, score
         self.target_structure = target_structure
-        self.folded_struture = folded_structure
+        self.folded_structure = folded_structure
 
 class SequenceDesigner(object):
     def __init__(self):
