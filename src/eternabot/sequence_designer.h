@@ -153,7 +153,8 @@ public:
     MutateUnpairedResMove(
             secondary_structure::ResidueOPs designable_unpaired_res,
             std::map<int, secondary_structure::ResType> const & res_type_constraints):
-            designable_unpaired_res_(designable_unpaired_res) {
+            designable_unpaired_res_(designable_unpaired_res),
+            res_type_constraints_(res_type_constraints) {
         possible_res_types_ = secondary_structure::ResTypes {
             secondary_structure::ResType::A,
             secondary_structure::ResType::C,
@@ -177,12 +178,20 @@ public:
         current_ = designable_unpaired_res_[rng_.randrange((int)designable_unpaired_res_.size())];
 
         auto org_res_type = res_type_constraints_[current_->num()];
+
         last_res_type_ = current_->res_type();
         auto count = 0;
         while(true) {
             count += 1;
             if(count > 1000) { return 0; }
             current_res_type_ = possible_res_types_[rng_.randrange((int)possible_res_types_.size())];
+            /*if(org_res_type == secondary_structure::ResType::N) {
+                auto rand = rng_.randrange(1000);
+                if(rand < 900) {
+                    current_res_type_ = secondary_structure::ResType::A;
+                }
+            }*/
+
             if(!secondary_structure::does_restype_satisfy_constraint(current_res_type_, org_res_type)) {
                 continue;
             }

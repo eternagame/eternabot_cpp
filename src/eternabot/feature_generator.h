@@ -36,6 +36,7 @@ public:
     std::map<int, int> pairmap;
     secondary_structure::MotifOPs helices;
     secondary_structure::MotifOPs multi_loops;
+    String structure;
     
 };
 

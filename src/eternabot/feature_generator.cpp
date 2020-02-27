@@ -54,6 +54,7 @@ FeatureGenerator::update_features(
     features->dotplot = v_.bp_probabilities(p->sequence());
     features->fe = v_.free_energy();
     features->multi_loops.resize(0);
+    features->structure = v_.get_structure();
 
     for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::NWAY) {
