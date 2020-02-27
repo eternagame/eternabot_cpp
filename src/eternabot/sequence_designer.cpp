@@ -103,12 +103,16 @@ SequenceDesigner::design(
 
     for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
+        for(auto const & end : m->ends()) {
+            closing_bps_[end] = 1;
+        }
+
         if(m->mtype() == util::MotifType::HAIRPIN) {
             int i = -1;
             for(auto const & r : m->residues()) {
                 i++;
                 if(i == 0 || i == m->residues().size()-1) { continue; }
-                if(i == 1) {
+                if(i == 1 && m->residues().size() > 5) {
                     if(secondary_structure::is_restype_a_ambiguous_code(r->res_type())) {
                         if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type()) &&
                            secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::G, r->res_type())) {
@@ -120,6 +124,11 @@ SequenceDesigner::design(
                         else if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::G, r->res_type())) {
                             res_type_constraints_[r->num()] = secondary_structure::ResType::G;
                         }
+                    }
+                }
+                else if(i == 1) {
+                    if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type())) {
+                        res_type_constraints_[r->num()] = secondary_structure::ResType::A;
                     }
                 }
                 else {
@@ -513,7 +522,7 @@ SequenceDesigner::_optimize_substructure(
 
     auto current_move = MonteCarloMoveOP(nullptr);
     auto moves = MonteCarloMoveOPs(2);
-    moves[0] = std::make_shared<MutateBPMove>(current_designable_bps, possible_rt_bps_, res_type_constraints_);
+    moves[0] = std::make_shared<MutateBPMove>(current_designable_bps, possible_rt_bps_, res_type_constraints_, closing_bps_);
     moves[1] = std::make_shared<MutateUnpairedResMove>(current_designable_unpaired_res, res_type_constraints_);
 
     auto current_sequence = p->sequence();

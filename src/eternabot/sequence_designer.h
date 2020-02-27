@@ -74,10 +74,12 @@ public:
     MutateBPMove(
             secondary_structure::BasepairOPs const & designable_bps,
             std::vector<secondary_structure::ResTypes> const & possible_rt_types,
-            std::map<int, secondary_structure::ResType> const & res_type_constraints):
+            std::map<int, secondary_structure::ResType> const & res_type_constraints,
+            std::map<secondary_structure::BasepairOP, int> const & closing_bps):
             designable_bps_(designable_bps),
             possible_rt_types_(possible_rt_types),
             res_type_constraints_(res_type_constraints),
+            closing_bps_(closing_bps),
             rng_(util::RandomNumberGenerator()) {
         last_res_types_ = secondary_structure::ResTypes(2);
     }
@@ -112,6 +114,11 @@ public:
                 current_res_types_ = possible_rt_types_[rng_.randrange(6)];
 
             }
+
+            if(closing_bps_.find(current_) != closing_bps_.end()) {
+                _get_random_res_type_pair_gc_cap(current_res_types_);
+            }
+
             //std::cout << current_res_types_[0] << " " << current_res_types[1];
             if(!secondary_structure::does_restype_satisfy_constraint(current_res_types_[0], org_res_type_1) ||
                !secondary_structure::does_restype_satisfy_constraint(current_res_types_[1], org_res_type_2)) {
@@ -139,10 +146,58 @@ public:
     }
 
 private:
+    void
+    _get_random_res_type_pair_gc_cap(
+            secondary_structure::ResTypes & pair) {
+        // biased base pair selection for caped ends, 80% chance to be GC/CG over AU/UA
+        // will do GCs
+        auto rand = rng_.randrange(1000);
+        if(rand > 200) {
+            // selecting GC
+            if(rng_.randrange(1000) > 500) {
+                pair[0] = secondary_structure::ResType::G;
+                pair[1] = secondary_structure::ResType::C;
+            }
+                // selecting CG
+            else {
+                pair[0] = secondary_structure::ResType::C;
+                pair[1] = secondary_structure::ResType::G;
+            }
+        }
+
+        else if(rand > 50){
+            // selecting AU
+            if(rng_.randrange(1000) > 500) {
+                pair[0] = secondary_structure::ResType::A;
+                pair[1] = secondary_structure::ResType::U;
+            }
+                // selecting UA
+            else {
+                pair[0] = secondary_structure::ResType::U;
+                pair[1] = secondary_structure::ResType::A;
+            }
+        }
+        else {
+            // selecting AU
+            if(rng_.randrange(1000) > 500) {
+                pair[0] = secondary_structure::ResType::G;
+                pair[1] = secondary_structure::ResType::U;
+            }
+                // selecting UA
+            else {
+                pair[0] = secondary_structure::ResType::U;
+                pair[1] = secondary_structure::ResType::G;
+            }
+
+        }
+    }
+
+private:
     secondary_structure::BasepairOPs designable_bps_;
     secondary_structure::BasepairOP current_;
     std::vector<secondary_structure::ResTypes> possible_rt_types_;
     std::map<int, secondary_structure::ResType> res_type_constraints_;
+    std::map<secondary_structure::BasepairOP, int> closing_bps_;
     util::RandomNumberGenerator rng_;
     secondary_structure::ResTypes last_res_types_, current_res_types_;
 
@@ -335,6 +390,7 @@ private:
     std::vector<Strings> possible_bps_;
     std::vector<secondary_structure::ResTypes> possible_rt_bps_;
     std::vector<secondary_structure::ResType> possible_res_types_;
+    std::map<secondary_structure::BasepairOP, int> closing_bps_;
     base::Options options_;
     util::RandomNumberGenerator rng_;
     util::MonteCarlo mc_;
