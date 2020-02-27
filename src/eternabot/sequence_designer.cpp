@@ -131,6 +131,50 @@ SequenceDesigner::design(
                 }
             }
         }
+        else if(m->mtype() == util::MotifType::TWOWAY) {
+            // single mismatch boost to G-G
+            if(m->residues().size() == 6) {
+                for(auto const & r : m->residues()) {
+                    auto bps = p->get_basepair(r->uuid());
+                    if(bps.size() != 0) { continue; }
+                    if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::G, r->res_type())) {
+                        res_type_constraints_[r->num()] = secondary_structure::ResType::G;
+                    }
+                }
+            }
+
+            else {
+                for(auto const & c : m->chains()) {
+                    int i = -1;
+                    for(auto const & r : c->residues()) {
+                        i++;
+                        if(i < 2 || i > c->residues().size()-3) { continue;}
+                        if (secondary_structure::is_restype_a_ambiguous_code(r->res_type())) {
+                            if (secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type())) {
+                                res_type_constraints_[r->num()] = secondary_structure::ResType::A;
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+
+        else {
+            for(auto const & c : m->chains()) {
+                int i = -1;
+                for(auto const & r : c->residues()) {
+                    i++;
+                    if(i < 2 || i > c->residues().size()-3) { continue;}
+                    if (secondary_structure::is_restype_a_ambiguous_code(r->res_type())) {
+                        if (secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type())) {
+                            res_type_constraints_[r->num()] = secondary_structure::ResType::A;
+                        }
+                    }
+                }
+            }
+        }
+
         //std::cout << m->sequence() << std::endl;
     }
 
@@ -534,6 +578,13 @@ SequenceDesigner::_bp_list_diff(
         pj = plist[i].j;
         score += abs(pair_map[pi][pj] - plist[i].p);
     }
+
+    int i = -1;
+    for(auto const & r : p->residues()) {
+        i++;
+        if(r->dot_bracket()[0] != features->structure[i]) { score += 1;}
+    }
+
     return score;
 
 }
