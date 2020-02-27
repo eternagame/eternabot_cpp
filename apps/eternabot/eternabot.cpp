@@ -57,10 +57,13 @@ EternabotApp::run() {
     out.open(parameters_.out_file);
     out << "opt_num,structure,opt_score,bp_diff_score,opt_sequence,longest_gc_stretch" << std::endl;
 
+    auto previous_solutions = Strings();
     auto parser = secondary_structure::Parser();
     for(int i = 0; i < parameters_.n; i++) {
-        auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);;
+        auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);
+        designer.set_previous_solutions(previous_solutions);
         auto results = designer.design(p);
+        previous_solutions.push_back(results[0]->sequence);
         p->replace_sequence(results[0]->sequence);
         v.fold(results[0]->sequence);
         std::cout << results[0]->score << " " << results[0]->bp_diff_score << " " <<  results[0]->sequence << " " << p->dot_bracket() << " " << v.get_structure() << std::endl;

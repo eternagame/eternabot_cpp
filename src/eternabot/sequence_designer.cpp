@@ -87,6 +87,7 @@ SequenceDesigner::update_var_options() {
 SequenceDesignerResultOPs const &
 SequenceDesigner::design(
         secondary_structure::PoseOP const & p) {
+
     results_ = SequenceDesignerResultOPs();
 
     pair_map_ = std::vector<std::vector<int>>(p->residues().size()+1);
@@ -505,6 +506,7 @@ SequenceDesigner::_optimize_substructure(
         secondary_structure::PoseOP p,
         int steps) {
 
+
     auto scorer = Scorer();
     scorer.setup(p);
     auto current_designable_bps = secondary_structure::BasepairOPs();
@@ -561,6 +563,13 @@ SequenceDesigner::_optimize_substructure(
         }
 
         if(current_score > best_score) {
+            auto found = 0;
+            for(auto const & previous_sol : previous_solutions_) {
+                if(previous_sol == p->sequence()) { found = 1; break; }
+            }
+            if(found) { continue; }
+
+
             best_score = current_score;
             best_sequence = p->sequence();
         }

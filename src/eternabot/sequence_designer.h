@@ -292,7 +292,13 @@ public:
     
     SequenceDesignerResultOPs const &
     design(secondary_structure::PoseOP const &);
-    
+
+public:
+    void
+    set_previous_solutions(
+            Strings const & solutions) {
+        previous_solutions_ = solutions;
+    }
     
 public: //option wrappers
 
@@ -410,6 +416,8 @@ private:
     std::vector<std::vector<int>> pair_map_;
     size_t pair_map_entries_;
     vienna::Vienna v_;
+
+    Strings previous_solutions_;
 
 
     int designs_, steps_;
