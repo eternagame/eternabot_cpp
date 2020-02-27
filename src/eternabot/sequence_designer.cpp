@@ -98,12 +98,53 @@ SequenceDesigner::design(
         pair_map_[bp->res2()->num()][bp->res1()->num()] = 1;
     }
     pair_map_entries_ = p->residues().size()*p->residues().size();
+    res_type_constraints_ = std::map<int, secondary_structure::ResType>();
     auto motifs = p->helices();
 
-    res_type_constraints_ = std::map<int, secondary_structure::ResType>();
-    for(auto const & r : p->residues()) {
-        res_type_constraints_[r->num()] = r->res_type();
+    for(auto const & m : p->motifs()) {
+        if(m->mtype() == util::MotifType::HELIX) { continue; }
+        if(m->mtype() == util::MotifType::HAIRPIN) {
+            int i = -1;
+            for(auto const & r : m->residues()) {
+                i++;
+                if(i == 0 || i == m->residues().size()-1) { continue; }
+                if(i == 1) {
+                    if(secondary_structure::is_restype_a_ambiguous_code(r->res_type())) {
+                        if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type()) &&
+                           secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::G, r->res_type())) {
+                            res_type_constraints_[r->num()] = secondary_structure::ResType::R;
+                        }
+                        else if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type())) {
+                            res_type_constraints_[r->num()] = secondary_structure::ResType::A;
+                        }
+                        else if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::G, r->res_type())) {
+                            res_type_constraints_[r->num()] = secondary_structure::ResType::G;
+                        }
+                    }
+                }
+                else {
+                    if (secondary_structure::is_restype_a_ambiguous_code(r->res_type())) {
+                        if (secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, r->res_type())) {
+                            res_type_constraints_[r->num()] = secondary_structure::ResType::A;
+                        }
+                    }
+                }
+            }
+        }
+        //std::cout << m->sequence() << std::endl;
     }
+
+    //std::cout << p->sequence() << std::endl;
+    for(auto const & r : p->residues()) {
+        if(res_type_constraints_.find(r->num()) == res_type_constraints_.end()) {
+            res_type_constraints_[r->num()] = r->res_type();
+        }
+        //std::cout << secondary_structure::convert_res_type_to_str(res_type_constraints_[r->num()]);
+    }
+    //std::cout << std::endl;
+    //std::cout << p->dot_bracket() << std::endl;
+
+    //exit(0);
 
     _find_designable_bps(p);       // find all basepairs with N-N residues
     for(auto const & r : p->residues()) {
