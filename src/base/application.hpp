@@ -97,7 +97,7 @@ public: //option wrappers
     }
 
     inline
-    float
+    int
     get_int_option(String const & name) { return options_.get_int(name); }
 
     inline

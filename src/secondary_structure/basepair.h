@@ -130,7 +130,7 @@ get_bp_type(
     else if(bp.res1()->res_type() == ResType::G && bp.res2()->res_type() == ResType::C) { return BPType::GC; }
     else if(bp.res1()->res_type() == ResType::G && bp.res2()->res_type() == ResType::U) { return BPType::GU; }
     else if(bp.res1()->res_type() == ResType::U && bp.res2()->res_type() == ResType::G) { return BPType::UG; }
-    else { throw secondary_structure::Exception("unknown basepair type"); }
+    else { throw secondary_structure::Exception("unknown basepair type: " + bp.res1()->name() + "-" + bp.res2()->name()); }
 }
 
     

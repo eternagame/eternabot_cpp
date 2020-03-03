@@ -38,6 +38,7 @@ private:
         String seq, ss;
         String out_file;
         int steps, n;
+        bool not_unique;
     };
 
 private:

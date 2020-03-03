@@ -40,7 +40,7 @@ class SequenceDesigner(object):
 
 def main():
     sd = SequenceDesigner()
-    sols = sd.design("((((....))))", "NNNNUUCGNNNN", solutions=5)
+    sols = sd.design("((((....))))", "NGGGUUCGCCCN", solutions=10)
     for s in sols:
         print(s.sequence, s.score, s.target_structure, s.folded_structure)
 

@@ -44,6 +44,8 @@ private:
     struct Parameters {
         String csv, out_file;
         bool test_load;
+        int start;
+        int max_size;
     };
 
 private:

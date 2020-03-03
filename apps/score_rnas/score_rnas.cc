@@ -16,6 +16,8 @@ ScoreRNAsApp::setup_options() {
     add_option("csv", String(""), base::OptionType::STRING, false);
     add_option("out_file", "eternabot.csv", base::OptionType::STRING);
     add_option("test_load", false, base::OptionType::BOOL);
+    add_option("start", 0, base::OptionType::INT);
+    add_option("max_size", 99999, base::OptionType::INT);
 
 }
 
@@ -27,6 +29,8 @@ ScoreRNAsApp::parse_command_line(
     parameters_.csv       = get_string_option("csv");
     parameters_.out_file  = get_string_option("out_file");
     parameters_.test_load = get_bool_option("test_load");
+    parameters_.start     = get_int_option("start");
+    parameters_.max_size  = get_int_option("max_size");
 
 }
 
@@ -47,7 +51,7 @@ ScoreRNAsApp::run() {
             out << strategy_names[i];
             if (i != strategy_names.size() - 1) { out << ","; }
         }
-        out << ",total_score,bp_diff";
+        out << ",total_score,bp_diff,predicted_structure";
         out << std::endl;
     }
     else {
@@ -58,14 +62,22 @@ ScoreRNAsApp::run() {
     auto lines = base::get_lines_from_file(parameters_.csv);
     auto scores = Floats();
     for(int i = 1; i < lines.size(); i++) {
+        if(i < parameters_.start) {
+            continue;
+        }
+        //std::cout << i << std::endl;
         if(lines[i].length() < 5) { break; }
+        scorer = eternabot::Scorer();
         auto score = 0.0;
         auto spl = base::split_str_by_delimiter(lines[i], ",");
+        if(spl[0].length() > parameters_.max_size) {
+            continue;
+        }
         auto p = secondary_structure::PoseOP(nullptr);
         try {
             p = parser.parse_to_pose(spl[0], spl[1]);
             if(parameters_.test_load) {
-                //out << spl[0] << "," << spl[1] << "," << spl[2] << "," << 1 << std::endl;
+                out << spl[0] << "," << spl[1] << "," << spl[2] << "," << 1 << std::endl;
                 continue;
 
             }
@@ -79,9 +91,15 @@ ScoreRNAsApp::run() {
             continue;
         }
 
-        score = scorer.score_secondary_structure(p);
-        scores = scorer.get_scores(p);
-        _setup_pairmap(p);
+        try {
+            score = scorer.score_secondary_structure(p);
+            scores = scorer.get_scores(p);
+            _setup_pairmap(p);
+        }
+        catch(secondary_structure::Exception const & e) {
+            std::cout << spl[0] << " " << spl[1] << e.what() << std::endl;
+            continue;
+        }
 
 
         out << spl[0] << "," << spl[1] << "," << spl[2] << ",";
@@ -91,6 +109,7 @@ ScoreRNAsApp::run() {
 
         }
         out << "," << score << "," << _bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features());
+        out << "," << scorer.features()->structure;
         out << std::endl;
 
     }

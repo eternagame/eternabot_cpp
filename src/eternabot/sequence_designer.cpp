@@ -102,6 +102,7 @@ SequenceDesigner::design(
     res_type_constraints_ = std::map<int, secondary_structure::ResType>();
     auto motifs = p->helices();
 
+    // boosting!
     for(auto const & m : p->motifs()) {
         if(m->mtype() == util::MotifType::HELIX) { continue; }
         for(auto const & end : m->ends()) {
@@ -237,7 +238,7 @@ SequenceDesigner::design(
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
     //std::cout << p->sequence() << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
-    auto score = _optimize_substructure(p, 1000);
+    auto score = _optimize_substructure(p, steps_);
 
     //std::cout << p->sequence() << " " << score << std::endl;
     //std::cout << _bp_list_diff(p, pair_map_, pair_map_entries_) << std::endl;
@@ -536,8 +537,14 @@ SequenceDesigner::_optimize_substructure(
 
     auto best_sequence = p->sequence();
     auto pos = 0;
+    auto tried_again_count = 0;
+    auto length = p->sequence().length();
 
     for(int i = 0; i < steps; i++) {
+        if(tried_again_count > 10) {
+            tried_again_count = 0;
+            i++;
+        }
         pos = rng_.randrange(1000);
         if(pos < 500) {
             current_move = moves[0];
@@ -548,8 +555,10 @@ SequenceDesigner::_optimize_substructure(
         // move didn't do anything, try again
         if(current_move->move(p) == 0) {
             i--;
+            tried_again_count++;
             continue;
         }
+        tried_again_count = 0;
 
         //next_score = scorer_.score_secondary_structure(p);
         eternabot_score = scorer.score_secondary_structure(p);
@@ -569,7 +578,7 @@ SequenceDesigner::_optimize_substructure(
             }
             if(found) { continue; }
 
-
+            //std::cout << best_score << " " << _bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features()) << " " << exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/5) <<" " << eternabot_score << std::endl;
             best_score = current_score;
             best_sequence = p->sequence();
         }

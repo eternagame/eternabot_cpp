@@ -21,6 +21,7 @@ EternabotApp::setup_options() {
     add_option("steps", 100, base::OptionType::INT);
     add_option("n", 1, base::OptionType::INT);
     add_option("out_file", "eternabot.csv", base::OptionType::STRING);
+    add_option("not_unique", false, base::OptionType::BOOL);
 
 }
 
@@ -34,7 +35,7 @@ EternabotApp::parse_command_line(
     parameters_.steps     = get_int_option("steps");
     parameters_.n         = get_int_option("n");
     parameters_.out_file  = get_string_option("out_file");
-
+    parameters_.not_unique  = get_bool_option("not_unique");
     if(parameters_.seq == String("")) {
        for(int i = 0; i < parameters_.ss.length(); i++) {
            parameters_.seq += "N";
@@ -63,7 +64,9 @@ EternabotApp::run() {
         auto p = parser.parse_to_pose(parameters_.seq, parameters_.ss);
         designer.set_previous_solutions(previous_solutions);
         auto results = designer.design(p);
-        previous_solutions.push_back(results[0]->sequence);
+        if(!parameters_.not_unique) {
+            previous_solutions.push_back(results[0]->sequence);
+        }
         p->replace_sequence(results[0]->sequence);
         v.fold(results[0]->sequence);
         std::cout << results[0]->score << " " << results[0]->bp_diff_score << " " <<  results[0]->sequence << " " << p->dot_bracket() << " " << v.get_structure() << std::endl;

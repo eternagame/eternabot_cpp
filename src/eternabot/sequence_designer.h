@@ -192,6 +192,7 @@ private:
         }
     }
 
+
 private:
     secondary_structure::BasepairOPs designable_bps_;
     secondary_structure::BasepairOP current_;
@@ -273,6 +274,11 @@ private:
     util::RandomNumberGenerator rng_;
 
 };
+
+/*class BoostLoopMove : public MonteCarloMove {
+
+
+};*/
 
 
 typedef std::shared_ptr<MonteCarloMove> MonteCarloMoveOP;
