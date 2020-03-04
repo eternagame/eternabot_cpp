@@ -19,7 +19,7 @@ class NumofYellowNucleotidesperLengthofString : public Strategy {
 public:
     NumofYellowNucleotidesperLengthofString() {
         params_ = std::vector<float>(1);
-        params_[0] = 791.641998291;
+        params_[0] = 10.50;
         upper_length_ = Ints(10);
         upper_length_[0] = 0; upper_length_[1] = 1; upper_length_[2] = 2;
         upper_length_[3] = 2; upper_length_[4] = 2; upper_length_[5] = 3;

@@ -19,10 +19,10 @@ class CleanPlotStackCapsandSafeGC : public Strategy {
 public:
     CleanPlotStackCapsandSafeGC() {
         params_ = std::vector<float>(4);
-        params_[0] = 0.100135909783;
-        params_[1] = 1.76372839803;
-        params_[2] = 3.11085515568;
-        params_[3] = 0.966424875922;
+        params_[0] = 0.88;
+        params_[1] = 1.05;
+        params_[2] = 2.10;
+        params_[3] = 0.83;
         mean_ = 82.3365692703;
         stdev_ = 12.050647236;
         name_ = "CleanPlotStackCapsandSafeGC";

@@ -21,8 +21,8 @@ public:
         mean_ = 85.2869664088;
         stdev_ = 26.9535204308;
         params_ = Floats(2);
-        params_[0] = -5.24466157448;
-        params_[1] = -6.41810101288;
+        params_[0] = -5.71;
+        params_[1] = -6.63;
         name_ = "DirectionofGCPairsinMultiLoops";
 
     }

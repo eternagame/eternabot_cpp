@@ -38,10 +38,10 @@ void
 ScoreRNAsApp::run() {
     base::init_logging();
     auto scorer = eternabot::Scorer();
-    //auto scorer = eternabot::Scorer(
-    //        Strings{"ModifiedBerexTest"},
-    //        Floats{1});
-
+    /*auto scorer = eternabot::Scorer(
+            Strings{"ModifiedBerexTest"},
+            Floats{1});
+    */
     auto out = std::ofstream();
     out.open(parameters_.out_file);
     if(!parameters_.test_load) {

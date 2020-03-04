@@ -230,7 +230,8 @@ SequenceDesigner::design(
     if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
         auto current_score = scorer_.score_secondary_structure(p);
         auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
-        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
+        //results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
+        std::cout << scorer_.print_scores(p) << std::endl;
 
         return results_;
     }
@@ -248,59 +249,12 @@ SequenceDesigner::design(
 
     if(score > 100) { score = 100; }
 
+
     results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), score, bp_diff_score));
     return results_;
 
     exit(0);
 
-    /*for(auto const & m : p->motifs()) {
-        if(m->mtype() == util::MotifType::HELIX) { continue; }
-        motifs.push_back(m);
-    }
-    auto levels = std::map<secondary_structure::MotifOP, int>();
-    auto children = std::map<secondary_structure::MotifOP, secondary_structure::MotifOPs>();
-    auto used_motifs = std::map<secondary_structure::MotifOP, int>();
-    auto head_motifs = secondary_structure::MotifOPs();
-
-    for(auto const & m : motifs) {
-        if(m->mtype() == util::MotifType::HAIRPIN) {
-            levels[m] = 0;
-            used_motifs[m] = 1;
-            head_motifs.push_back(m);
-        }
-    }
-
-
-
-    exit(0);
-
-
-    while(motifs.size() != used_motifs.size()) {
-        for(auto const & m : motifs) {
-            if(used_motifs.find(m) != used_motifs.end()) { continue; }
-            for(auto const kv : used_motifs) {
-                for(auto const & end : m->ends()) {
-                    if (kv.first->ends()[0] == end) {
-                        levels[m] = levels[kv.first] + 1;
-                        children[kv.first].push_back(m);
-                        used_motifs[m] = 1;
-                    }
-                }
-            }
-        }
-     }
-
-    auto sub_structures = std::vector<secondary_structure::MotifOPs>();
-
-    for(auto const & m : head_motifs) {
-        auto seen = std::map<secondary_structure::MotifOP, int>();
-        auto current_children = children[m];
-        std::cout << current_children.size() << std::endl;
-    }
-
-    exit(0);*/
-
-    //results_.push_back(std::make_shared<SequenceDesignerResult>(best_sequence, best_score));
     return results_;
     
 }
