@@ -230,8 +230,8 @@ SequenceDesigner::design(
     if(designable_unpaired_res_.size() == 0 && designable_bps_.size() == 0) {
         auto current_score = scorer_.score_secondary_structure(p);
         auto bp_diff_score = _bp_list_diff(p, pair_map_, pair_map_entries_, scorer_.features());
-        //results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
-        std::cout << scorer_.print_scores(p) << std::endl;
+        results_.push_back(std::make_shared<SequenceDesignerResult>(p->sequence(), current_score, bp_diff_score));
+        //std::cout << scorer_.print_scores(p) << std::endl;
 
         return results_;
     }
@@ -486,7 +486,7 @@ SequenceDesigner::_optimize_substructure(
     auto next_score = 0.0f;
     //auto best_score = scorer.score_secondary_structure(p);
     auto eternabot_score = 0.0f;
-    auto best_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/5)*scorer.score_secondary_structure(p);
+    auto best_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/10)*scorer.score_secondary_structure(p);
     auto current_score = best_score;
 
     auto best_sequence = p->sequence();
@@ -516,7 +516,7 @@ SequenceDesigner::_optimize_substructure(
 
         //next_score = scorer_.score_secondary_structure(p);
         eternabot_score = scorer.score_secondary_structure(p);
-        next_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/5)*eternabot_score;
+        next_score = exp(-_bp_list_diff(p, pair_map_, pair_map_entries_, scorer.features())/10)*eternabot_score;
 
         if(mc_.accept(next_score, current_score)) {
             current_score = next_score;
@@ -557,7 +557,7 @@ SequenceDesigner::_bp_list_diff(
         if(plist[i].p < 0.001) { continue; }
         pi = plist[i].i;
         pj = plist[i].j;
-        score += abs(pair_map[pi][pj] - plist[i].p);
+        //score += abs(pair_map[pi][pj] - plist[i].p);
     }
 
     int i = -1;
@@ -568,6 +568,7 @@ SequenceDesigner::_bp_list_diff(
 
     return score;
 
+
 }
 
 bool
@@ -576,6 +577,13 @@ SequenceDesigner::_assign_new_residue_restype(
     auto org_res_type = res_type_constraints_[r->num()];
     auto count = 0;
     while(1) {
+        if(std::find(designable_unpaired_res_.begin(), designable_unpaired_res_.end(), r) != designable_unpaired_res_.end()) {
+            if(secondary_structure::does_restype_satisfy_constraint(secondary_structure::ResType::A, org_res_type)) {
+                r->res_type(secondary_structure::ResType::A);
+                return true;
+            }
+        }
+
         auto res_type = possible_res_types_[rng_.randrange(possible_res_types_.size())];
         if(secondary_structure::does_restype_satisfy_constraint(res_type, org_res_type)) {
             r->res_type(res_type);

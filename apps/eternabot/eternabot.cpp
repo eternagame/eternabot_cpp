@@ -18,7 +18,7 @@ void
 EternabotApp::setup_options() {
     add_option("seq", String(""), base::OptionType::STRING, false);
     add_option("ss", String(""), base::OptionType::STRING, true);
-    add_option("steps", 100, base::OptionType::INT);
+    add_option("steps", 1000, base::OptionType::INT);
     add_option("n", 1, base::OptionType::INT);
     add_option("out_file", "eternabot.csv", base::OptionType::STRING);
     add_option("not_unique", false, base::OptionType::BOOL);
