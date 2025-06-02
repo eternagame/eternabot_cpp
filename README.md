@@ -1,6 +1,8 @@
 # Eternabot 2.0
 
-Eternabot 2.0 is an update algorithm for predicting the likelyhood of a RNA sequence will fold into a target secondary structure or base pairing arrangement.
+Eternabot 2.0 is an updated algorithm for predicting the likelyhood of a RNA sequence will fold into a target secondary structure or base pairing arrangement.
+
+For the original version of Eternabot, see https://github.com/eternagame/EternaBot
 
 ### How to install
 
